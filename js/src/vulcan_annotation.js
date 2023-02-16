@@ -60,7 +60,7 @@ class Choice {
             this.parent.on_select_child(this);
         }
 
-        if(this.on_select != null)
+        if (this.on_select != null)
             this.on_select(this.is_selected);
     }
 
@@ -123,7 +123,6 @@ class Choice {
     }
 
     decompile(annotation) {
-        // to do: dont forget to clear all selections.
 
         if (Array.isArray(annotation.value)) {
             for (const item of annotation.value) {
@@ -133,10 +132,10 @@ class Choice {
                     }
                 }
             }
-        } else if(this.inputType === "text"){
+        } else if (this.inputType === "text") {
             this.set_data(annotation.value);
-            if(this.on_data != null) this.on_data(this.data);
-        } else if(this.inputType != null){
+            if (this.on_data != null) this.on_data(this.data);
+        } else if (this.inputType != null) {
             for (const child of this.children) {
                 if (annotation.value.key === child.key) {
                     child.decompile(annotation.value);
@@ -145,6 +144,67 @@ class Choice {
         }
 
         this.select(true);
+    }
+
+    validate(annotation) {
+
+        if (this.inputType === "property") {
+            if (!Array.isArray(annotation.value)) return false;
+            if (annotation.value.length !== this.children.length) return false;
+
+            for (const c of this.children) {
+                let matched = null;
+                for (const item of annotation.value) {
+                    if (item.key === c.key) {
+                        matched = item;
+                    }
+                }
+                if (matched == null || !c.validate(matched))
+                    return false;
+            }
+
+            return true;
+        } else if (this.inputType === "multiple") {
+            if (!Array.isArray(annotation.value)) return false;
+            // check required
+            for (const c of this.children) {
+                if (c.required) {
+                    let matched = null;
+                    for (const item of annotation.value) {
+                        if (item.key === c.key) {
+                            matched = item;
+                        }
+                    }
+                    if (matched == null || !c.validate(matched))
+                        return false;
+                }
+            }
+            // check has key
+            for (const item of annotation.value) {
+                let matched = null;
+                for (const c of this.children) {
+                    if (item.key === c.key) {
+                        matched = c;
+                    }
+                }
+                if (matched == null || !matched.validate(item))
+                    return false;
+            }
+            // To do: check duplication?
+        } else if (this.inputType === "text") {
+            if (typeof annotation.value === 'string' || annotation.value instanceof String)
+                return true;
+        } else if (this.inputType === "mutual") {
+            if (annotation.value == null || annotation.value.key == null)
+                return false;
+            for (const child of this.children) {
+                if (annotation.value.key === child.key) {
+                    return child.validate(annotation.value);
+                }
+            }
+        }
+
+        return true;
     }
 
 }

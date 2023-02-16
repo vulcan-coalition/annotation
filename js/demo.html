@@ -12,6 +12,7 @@
     </div>
     <div>
         <input type="button" id="compile-button" value="Compile" />
+        <input type="button" id="validate-button" value="Validate" />
         <input type="button" id="decompile-button" value="Decompile" />
     </div>
     <textarea id="compile-result" rows="50" cols="50">
@@ -201,12 +202,22 @@
         category.initialize().then(function(category_node) {
 
             const compile_button = document.querySelector('#compile-button');
+            const validate_button = document.querySelector('#validate-button');
             const decompile_button = document.querySelector('#decompile-button');
             const compile_result = document.querySelector('#compile-result');
 
             compile_button.addEventListener('click', function(e) {
                 const compiled_object = category_node.compile();
                 compile_result.value = JSON.stringify(compiled_object);
+            });
+
+            validate_button.addEventListener('click', function(e) {
+                if(category_node.validate(JSON.parse(compile_result.value)))
+                {
+                    alert("Valid!");
+                }else{
+                    alert("Invalid!");
+                }
             });
 
             decompile_button.addEventListener('click', function(e) {

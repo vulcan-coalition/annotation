@@ -36,12 +36,11 @@
 
         let info_box;
 
-        const build_ui_node = function(logic_node, parent_dom) {
+        const build_ui_node = function(logic_node) {
             const root = document.createElement("div");
             root.appendChild(util.build_div_dom(logic_node.description || logic_node.key || "expand me"));
 
             root.classList.add("deselecting");
-            parent_dom.appendChild(root);
 
             logic_node.set_on_select(function(selected) {
                 if (selected) {
@@ -76,7 +75,7 @@
                     ul.classList.add("hide");
                     for (const child of logic_node.children) {
                         const li = document.createElement("li");
-                        li.appendChild(build_ui_node(child, ul));
+                        li.appendChild(build_ui_node(child));
                         ul.appendChild(li);
                     }
                     root.appendChild(ul);
@@ -184,7 +183,7 @@
                 ]
             }, null);
 
-            build_ui_node(root_logic, document.querySelector('#annotation'));
+            document.querySelector('#annotation').appendChild(build_ui_node(root_logic));
 
             return new Promise(function(resolve, reject) {
                 resolve(root_logic);

@@ -40,12 +40,12 @@ class Choice {
     }
 
     select(flag) {
-        if (this.inputType == null) {
+        if (this.inputType == null || this.inputType == "text") {
             if (flag == null) {
                 flag = !this.is_selected;
             }
         } else {
-            if (flag != null && !flag) {
+            if (flag != null && !flag && this.children != null) {
                 for (const child of this.children) {
                     child.select(false);
                 }

@@ -49,6 +49,10 @@ class Choice {
                 }
             }
 
+            if (this.inputType == null || this.inputType == "text") {
+                this.data = null;
+            }
+
             if (changed && this.on_select != null) {
                 this.on_select(this.is_selected);
             }
@@ -267,7 +271,7 @@ class Choice {
     }
 
     get_compile_errors(annotation) {
-        // check this node against the annotation
+        // check this node against an annotation
         // if this node.get_compile_errors is called, meaning we expected this node to be selected.
 
         const errors = [];

@@ -153,29 +153,34 @@ class Choice {
             return { key: this.key, value: this.data };
         } else if (this.inputType === "multiple" || this.inputType === "property" || this.inputType === "mutual") {
             const data = [];
+            let count_req = 0;
             for (const child of this.children) {
                 const child_result = child.relax_compile();
                 if (child_result != null)
                     data.push(child_result);
+                if(child.required)
+                    count_req += 1;
             }
-            if (data.length > 0)
+            if (data.length > 0 || (this.inputType === "multiple" && count_req === 0)) {
                 return {
                     key: this.key,
                     value: data
                 };
-            else return null;
+            } else {
+                return null;
+            }
         } else if (this.inputType == null) {
             if (!this.is_selected) return null;
             return { key: this.key };
         }
     }
 
-    decompile(annotation) {
+    __decompile(annotation) {
         if (Array.isArray(annotation.value)) {
             for (const item of annotation.value) {
                 for (const child of this.children) {
                     if (item.key === child.key) {
-                        child.decompile(item);
+                        child.__decompile(item);
                     }
                 }
             }
@@ -185,7 +190,7 @@ class Choice {
         } else if (this.inputType != null) {
             for (const child of this.children) {
                 if (annotation.value.key === child.key) {
-                    child.decompile(annotation.value);
+                    child.__decompile(annotation.value);
                 }
             }
         }
@@ -193,7 +198,12 @@ class Choice {
         if (this.conditions_met()) {
             this.is_selected = true;
             if (this.on_select != null) this.on_select(true);
-        }
+        }        
+    }
+
+    decompile(annotation) {
+        this.select(false);
+        this.__decompile(annotation);
     }
 
     validate(annotation) {

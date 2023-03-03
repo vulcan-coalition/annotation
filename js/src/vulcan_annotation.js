@@ -40,28 +40,39 @@ class Choice {
     }
 
     select(flag) {
-        if (this.inputType == null || this.inputType == "text") {
-            if (flag == null) {
-                flag = !this.is_selected;
-            }
-        } else {
-            if (flag != null && !flag && this.children != null) {
+        if(flag != null && !flag) {
+            const changed = flag !== this.is_selected;
+            this.is_selected = false;
+            if (this.children != null) {
                 for (const child of this.children) {
                     child.select(false);
                 }
             }
-            flag = this.conditions_met();
+
+            if (changed && this.on_select != null) {
+                this.on_select(this.is_selected);
+            }
+        }else{
+            if (this.inputType == null || this.inputType == "text") {
+                if (flag == null) {
+                    flag = !this.is_selected;
+                }
+            } else {
+
+                flag = this.conditions_met();
+            }
+
+            const changed = flag !== this.is_selected;
+            this.is_selected = flag;
+
+            if (changed && this.parent != null) {
+                this.parent.on_select_child(this);
+            }
+
+            if (changed && this.on_select != null) {
+                this.on_select(this.is_selected);
+            }
         }
-
-        const changed = flag !== this.is_selected;
-        this.is_selected = flag;
-
-        if (changed && this.parent != null) {
-            this.parent.on_select_child(this);
-        }
-
-        if (this.on_select != null)
-            this.on_select(this.is_selected);
     }
 
     on_select_child(selected_child) {
@@ -75,7 +86,17 @@ class Choice {
             }
         }
 
-        this.select();
+        const flag = this.conditions_met();
+        const changed = flag !== this.is_selected;
+        this.is_selected = flag;
+        
+        if (changed && this.parent != null) {
+            this.parent.on_select_child(this);
+        }
+
+        if(changed && this.on_select != null) {
+            this.on_select(this.is_selected);
+        }
     }
 
     conditions_met() {

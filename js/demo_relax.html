@@ -207,7 +207,7 @@
             const compile_result = document.querySelector('#compile-result');
 
             compile_button.addEventListener('click', function(e) {
-                const compiled_object = category_node.compile();
+                const compiled_object = category_node.relax_compile();
                 compile_result.value = JSON.stringify(compiled_object);
                 const errors = category_node.get_compile_errors(compiled_object);
                 for (const err of errors) {

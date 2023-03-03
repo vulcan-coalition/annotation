@@ -18,6 +18,7 @@ def shutdown_event():
     print("Test is exiting.", "Wait a moment until completely exits.")
 
 
+app.mount("/category", StaticFiles(directory="categories"))
 app.mount("/", StaticFiles(directory="js"))
 
 

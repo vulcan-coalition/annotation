@@ -122,8 +122,30 @@ class Choice {
         } else return { key: this.key };
     }
 
-    decompile(annotation) {
+    relax_compile() {
+        if (this.inputType === "text") {
+            if (!this.is_selected) return null;
+            return { key: this.key, value: this.data };
+        } else if (this.inputType === "multiple" || this.inputType === "property" || this.inputType === "mutual") {
+            const data = [];
+            for (const child of this.children) {
+                const child_result = child.relax_compile();
+                if (child_result != null)
+                    data.push(child_result);
+            }
+            if (data.length > 0)
+                return {
+                    key: this.key,
+                    value: data
+                };
+            else return null;
+        } else if (this.inputType == null) {
+            if (!this.is_selected) return null;
+            return { key: this.key };
+        }
+    }
 
+    decompile(annotation) {
         if (Array.isArray(annotation.value)) {
             for (const item of annotation.value) {
                 for (const child of this.children) {
@@ -143,7 +165,10 @@ class Choice {
             }
         }
 
-        this.select(true);
+        if (this.conditions_met()) {
+            this.is_selected = true;
+            if (this.on_select != null) this.on_select(true);
+        }
     }
 
     validate(annotation) {
@@ -163,7 +188,6 @@ class Choice {
                     return false;
             }
 
-            return true;
         } else if (this.inputType === "multiple") {
             if (!Array.isArray(annotation.value)) return false;
             // check required
@@ -195,16 +219,121 @@ class Choice {
             if (typeof annotation.value === 'string' || annotation.value instanceof String)
                 return true;
         } else if (this.inputType === "mutual") {
-            if (annotation.value == null || annotation.value.key == null)
+            if (Array.isArray(annotation.value)) {
+                let result = false;
+                for (const c of this.children) {
+                    for (const item of annotation.value) {
+                        if (item.key === c.key) {
+                            if (c.validate(item)) {
+                                return true;
+                            }
+                        }
+                    }
+                }
                 return false;
-            for (const child of this.children) {
-                if (annotation.value.key === child.key) {
-                    return child.validate(annotation.value);
+            } else {
+                if (annotation.value == null || annotation.value.key == null)
+                    return false;
+                for (const child of this.children) {
+                    if (annotation.value.key === child.key) {
+                        return child.validate(annotation.value);
+                    }
                 }
             }
         }
 
         return true;
+    }
+
+    get_compile_errors(annotation) {
+        // check this node against the annotation
+        // if this node.get_compile_errors is called, meaning we expected this node to be selected.
+
+        const errors = [];
+
+        const find_match = function(child) {
+            if (annotation == null || annotation.value == null || !Array.isArray(annotation.value)) return null;
+            for (const ac of annotation.value) {
+                if (ac.key == child.key)
+                    return ac;
+            }
+            return null;
+        }
+
+        if (this.inputType === "property") {
+            for (const c of this.children) {
+                const ac = find_match(c);
+                if (ac != null) {
+                    errors.push(...c.get_compile_errors(ac));
+                } else {
+                    errors.push(...c.get_compile_errors());
+                }
+            }
+        } else if (this.inputType === "multiple") {
+            // check required
+            for (const c of this.children) {
+                if (c.required) {
+                    const ac = find_match(c);
+                    if (ac != null) {
+                        errors.push(...c.get_compile_errors(ac));
+                    } else {
+                        errors.push(...c.get_compile_errors());
+                    }
+                }
+            }
+        } else if (this.inputType === "mutual") {
+            let match_count = 0;
+            for (const c of this.children) {
+                const ac = find_match(c);
+                if (ac != null) {
+                    errors.push(...c.get_compile_errors(ac));
+                    match_count += 1;
+                }
+            }
+            if (match_count == 0) {
+                errors.push({
+                    node: this,
+                    error: -3
+                });
+            }
+        } else if (this.inputType === "text") {
+            if (annotation == null || annotation.key !== this.key) {
+                errors.push({
+                    node: this,
+                    error: -1
+                });
+            } else {
+                if (annotation.key !== this.key ||
+                    !(typeof annotation.value === 'string' || annotation.value instanceof String)) {
+                    errors.push({
+                        node: this,
+                        error: -2
+                    });
+                }
+            }
+        } else if (this.inputType == null) {
+            if (annotation == null || annotation.key !== this.key) {
+                errors.push({
+                    node: this,
+                    error: -1
+                });
+            }
+        }
+
+        return errors;
+    }
+
+    static interpret_error(error) {
+        switch (error) {
+            case -1:
+                return "The required field is not selected.";
+            case -2:
+                return "Value of the text field is not string.";
+            case -3:
+                return "The mutual field is not selected.";
+            default:
+                return "Unknown error";
+        }
     }
 
 }

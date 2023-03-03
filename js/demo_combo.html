@@ -15,6 +15,7 @@
         <input type="button" id="validate-button" value="Validate" />
         <input type="button" id="decompile-button" value="Decompile" />
     </div>
+    <div id="compile-error"></div>
     <textarea id="compile-result" rows="50" cols="50">
     </textarea>
     <script src="./src/vulcan_annotation.js" crossorigin></script>
@@ -39,7 +40,7 @@
         const build_ui_node = function(logic_node) {
             const root = document.createElement("div");
             root.appendChild(util.build_div_dom(logic_node.description || logic_node.key || "expand me"));
-            if(logic_node.is_selected) root.classList.add("selecting");
+            if (logic_node.is_selected) root.classList.add("selecting");
             else root.classList.add("deselecting");
 
             logic_node.set_on_select(function(selected) {
@@ -80,7 +81,7 @@
                         opt.value = child.key;
                         opt.text = child.description;
                         select.appendChild(opt);
-                        if(child.is_selected) {
+                        if (child.is_selected) {
                             opt.selected = true;
                             holder.appendChild(build_ui_node(child));
                         }
@@ -92,7 +93,7 @@
                             holder.removeChild(holder.firstChild);
                         }
                         for (const child of logic_node.children) {
-                            if(child.key === e.target.value) {
+                            if (child.key === e.target.value) {
                                 holder.appendChild(build_ui_node(child));
                                 child.select();
                                 break;
@@ -241,6 +242,12 @@
             compile_button.addEventListener('click', function(e) {
                 const compiled_object = category_node.compile();
                 compile_result.value = JSON.stringify(compiled_object);
+                const errors = category_node.get_compile_errors(compiled_object);
+                for (const err of errors) {
+                    err.node = err.node.description || err.node.key;
+                    err.error = Choice.interpret_error(err.error);
+                }
+                document.querySelector('#compile-error').innerHTML = JSON.stringify(errors);
             });
 
             validate_button.addEventListener('click', function(e) {

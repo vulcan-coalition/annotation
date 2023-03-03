@@ -226,6 +226,7 @@
             });
 
             decompile_button.addEventListener('click', function(e) {
+                category_node.select(false);
                 category_node.decompile(JSON.parse(compile_result.value));
             });
 

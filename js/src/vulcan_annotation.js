@@ -273,10 +273,14 @@ class Choice {
         const errors = [];
 
         const find_match = function(child) {
-            if (annotation == null || annotation.value == null || !Array.isArray(annotation.value)) return null;
-            for (const ac of annotation.value) {
-                if (ac.key == child.key)
-                    return ac;
+            if (annotation == null || annotation.value == null) return null;
+            if (Array.isArray(annotation.value)) {
+                for (const ac of annotation.value) {
+                    if (ac.key == child.key)
+                        return ac;
+                }
+            }else if(annotation.value.key == child.key){
+                return annotation.value;
             }
             return null;
         }

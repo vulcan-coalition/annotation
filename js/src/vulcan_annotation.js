@@ -70,7 +70,7 @@ class Choice {
 
         if(this.parent != null && this.parent.inputType === "mutual") {
             for (const child of this.parent.children) {
-                if (child !== this) {
+                if (child.is_selected && child !== this) {
                     child.unset();
                 }
             }
@@ -245,7 +245,7 @@ class Choice {
         if (!this.is_selected) {
             errors.push({
                 node: this,
-                error: -1
+                error: (this.inputType === "text"? -2: -1)
             });
 
         } else {
@@ -296,7 +296,7 @@ class Choice {
             case -1:
                 return "The required field is not selected.";
             case -2:
-                return "Value of the text field is not string.";
+                return "Value of the text field is not filled.";
             case -3:
                 return "The mutual field is not selected or over selected.";
             default:

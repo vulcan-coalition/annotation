@@ -35,15 +35,15 @@
 
     category = function() {
 
-        let info_box;
-
         const build_ui_node = function(logic_node) {
             const root = document.createElement("div");
             root.appendChild(util.build_div_dom(logic_node.description || logic_node.key || "expand me"));
             if (logic_node.is_selected) root.classList.add("selecting");
             else root.classList.add("deselecting");
 
-            logic_node.set_on_select(function(selected) {
+            let holder = null;
+            let ul = null;
+            const expand = function(selected) {
                 if (selected) {
                     root.classList.add("selecting");
                     root.classList.remove("deselecting");
@@ -51,16 +51,34 @@
                     root.classList.add("deselecting");
                     root.classList.remove("selecting");
                 }
-                const select = root.querySelector(":scope > select");
-                if (select != null) {
+
+                if (holder != null) {
+                    if (holder.firstChild) {
+                        holder.removeChild(holder.firstChild);
+                    }
                     for (const child of logic_node.children) {
                         if (child.is_selected) {
-                            select.value = child.key;
+                            holder.appendChild(build_ui_node(child));
                             break;
                         }
                     }
                 }
-            });
+
+                if (ul != null) {
+                    while (ul.firstChild) {
+                        ul.removeChild(ul.firstChild);
+                    }
+                    if (selected) {
+                        for (const child of logic_node.children) {
+                            const li = document.createElement("li");
+                            li.appendChild(build_ui_node(child));
+                            ul.appendChild(li);
+                        }
+                    }
+                }
+            }
+
+            logic_node.set_on_select(expand);
 
             // create children
             if (logic_node.inputType != null) {
@@ -82,50 +100,32 @@
                     });
                 } else if (logic_node.inputType === "mutual") {
                     // mutual only propagate node when it has been selected.
-                    const holder = document.createElement("div");
+                    holder = document.createElement("div");
                     const select = document.createElement("select");
                     for (const child of logic_node.children) {
                         const opt = document.createElement("option");
                         opt.value = child.key;
                         opt.text = child.description;
+                        if(child.is_selected) opt.selected = true;
                         select.appendChild(opt);
-                        if (child.is_selected) {
-                            opt.selected = true;
-                            holder.appendChild(build_ui_node(child));
-                        }
                     }
+                    if(logic_node.is_selected) expand(true);
                     root.appendChild(select);
                     select.addEventListener('click', function(e) {
                         e.stopPropagation();
                         logic_node.set(e.target.value);
-                        while (holder.firstChild) {
-                            holder.removeChild(holder.firstChild);
-                        }
-                        for (const child of logic_node.children) {
-                            if (child.key === e.target.value) {
-                                holder.appendChild(build_ui_node(child));
-                                break;
-                            }
-                        }
                     });
 
                     root.appendChild(holder);
 
                 } else {
                     // property and multiple must show everything
-                    const ul = document.createElement("ul");
-                    ul.classList.add("hide");
-                    for (const child of logic_node.children) {
-                        const li = document.createElement("li");
-                        li.appendChild(build_ui_node(child));
-                        ul.appendChild(li);
-                    }
+                    ul = document.createElement("ul");
+                    if(logic_node.is_selected) expand(true);
                     root.appendChild(ul);
                     root.addEventListener('click', function(e) {
                         e.stopPropagation();
                         logic_node.toggle();
-                        ul.classList.toggle("hide");
-                        ul.classList.toggle("show");
                     });
                 }
 

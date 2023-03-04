@@ -130,10 +130,9 @@ class Choice {
 
 
     __decompile(annotation) {
-
+        this.is_selected = true;
         if (this.inputType === "text") {
-            this.set(annotation.value);
-            if (this.on_data != null) this.on_data(this.data);
+            this.data = annotation.value;
         } else if (this.inputType === "multiple" || this.inputType === "property") {
             for (const item of annotation.value) {
                 for (const child of this.children) {
@@ -143,17 +142,6 @@ class Choice {
                 }
             }
         } else if (this.inputType === "mutual") {
-
-            // if (Array.isArray(annotation.value)) {
-            //     for (const item of annotation.value) {
-            //         for (const child of this.children) {
-            //             if (item.key === child.key) {
-            //                 child.__decompile(item);
-            //             }
-            //         }
-            //     }
-            // }
-
             for (const child of this.children) {
                 if (annotation.value.key === child.key) {
                     child.__decompile(annotation.value);
@@ -163,14 +151,27 @@ class Choice {
         } else if (this.inputType == null) {
 
         }
+    }
 
-        this.is_selected = true;
+    __fireevents = function() {
         if (this.on_select != null) this.on_select(true);
+        if (this.inputType === "text") {
+            if (this.on_data != null) this.on_data(this.data);
+        } else if (this.inputType === "multiple" || this.inputType === "property" || this.inputType === "mutual") {
+            for (const child of this.children) {
+                if (child.is_selected) {
+                    child.__fireevents();
+                }
+            }
+        } else if (this.inputType == null) {
+
+        }
     }
 
     decompile(annotation) {
         this.unset();
         this.__decompile(annotation);
+        this.__fireevents();
     }
 
     validate(annotation) {

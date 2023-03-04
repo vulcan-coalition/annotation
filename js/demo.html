@@ -35,7 +35,6 @@
 
     category = function() {
 
-        let info_box;
 
         const build_ui_node = function(logic_node) {
             const root = document.createElement("div");
@@ -43,7 +42,7 @@
             if (logic_node.is_selected) root.classList.add("selecting");
             root.classList.add("deselecting");
 
-            logic_node.set_on_select(function(selected) {
+            const expand = function(selected) {
                 if (selected) {
                     root.classList.add("selecting");
                     root.classList.remove("deselecting");
@@ -51,7 +50,23 @@
                     root.classList.add("deselecting");
                     root.classList.remove("selecting");
                 }
-            });
+
+                const ul = root.querySelector(":scope > ul");
+                if (ul != null) {
+                    while (ul.firstChild) {
+                        ul.removeChild(ul.firstChild);
+                    }
+                    if (selected) {
+                        for (const child of logic_node.children) {
+                            const li = document.createElement("li");
+                            li.appendChild(build_ui_node(child));
+                            ul.appendChild(li);
+                        }
+                    }
+                }
+            }
+
+            logic_node.set_on_select(expand);
 
             // create children
             if (logic_node.inputType != null) {
@@ -73,23 +88,11 @@
                     });
                 } else {
                     const ul = document.createElement("ul");
-                    ul.classList.add("hide");
-                    for (const child of logic_node.children) {
-                        const li = document.createElement("li");
-                        li.appendChild(build_ui_node(child));
-                        ul.appendChild(li);
-                    }
+                    if(logic_node.is_selected) expand(true);
                     root.appendChild(ul);
                     root.addEventListener('click', function(e) {
                         e.stopPropagation();
                         logic_node.toggle();
-                        if(logic_node.is_selected) {
-                            ul.classList.remove("hide");
-                            ul.classList.add("show");
-                        }else{
-                            ul.classList.add("hide");
-                            ul.classList.remove("show");
-                        }
                     });
                 }
 

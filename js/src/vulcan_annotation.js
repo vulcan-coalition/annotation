@@ -1,3 +1,7 @@
+/**
+version: 2.0
+**/
+
 class Choice {
     constructor(category, parent) {
         this.parent = parent;
@@ -31,100 +35,70 @@ class Choice {
         this.on_data = on_data;
     }
 
-    set_data(data) {
-        this.data = data;
-    }
-
     set_on_select(on_select) {
         this.on_select = on_select;
     }
 
-    select(flag) {
-        if(flag != null && !flag) {
-            const changed = flag !== this.is_selected;
-            this.is_selected = false;
-            if (this.children != null) {
-                for (const child of this.children) {
-                    child.select(false);
-                }
-            }
-
-            if (this.inputType == null || this.inputType == "text") {
-                this.data = null;
-            }
-
-            if (changed && this.on_select != null) {
-                this.on_select(this.is_selected);
-            }
+    toggle() {
+        if(this.is_selected) {
+            this.unset();
         }else{
-            if (this.inputType == null || this.inputType == "text") {
-                if (flag == null) {
-                    flag = !this.is_selected;
-                }
-            } else {
-
-                flag = this.conditions_met();
-            }
-
-            const changed = flag !== this.is_selected;
-            this.is_selected = flag;
-
-            if (changed && this.parent != null) {
-                this.parent.on_select_child(this);
-            }
-
-            if (changed && this.on_select != null) {
-                this.on_select(this.is_selected);
-            }
+            this.set();
         }
     }
 
-    on_select_child(selected_child) {
-        if (this.inputType === "mutual") {
-            if (selected_child.is_selected) {
-                for (const child of this.children) {
-                    if (child !== selected_child) {
-                        child.select(false);
-                    }
+    set(data) {
+        this.is_selected = true;
+        if (this.inputType === "text") {
+            // data = string value
+            this.data = data;
+        } else if (this.inputType === "mutual") {
+            // if data is one of the children's key
+            // it will automatically set child
+            for (const child of this.children) {
+                if (data == null || child.key !== data) {
+                    child.unset();
+                } else {
+                    child.set();
+                }
+            }
+        } else if (this.inputType === "multiple" || this.inputType === "property") {
+
+        } else if (this.inputType == null) {
+
+        }
+
+        if(this.parent != null && this.parent.inputType === "mutual") {
+            for (const child of this.parent.children) {
+                if (child !== this) {
+                    child.unset();
                 }
             }
         }
 
-        const flag = this.conditions_met();
-        const changed = flag !== this.is_selected;
-        this.is_selected = flag;
-        
-        if (changed && this.parent != null) {
-            this.parent.on_select_child(this);
-        }
-
-        if(changed && this.on_select != null) {
+        if (this.on_select != null) {
             this.on_select(this.is_selected);
         }
     }
 
-    conditions_met() {
-        if (this.inputType === "mutual") {
+    unset() {
+        this.is_selected = false;
+        this.data = null;
+        if (this.children != null) {
             for (const child of this.children) {
-                if (child.is_selected) return true;
+                child.unset();
             }
-            return false;
-        } else if (this.inputType === "property") {
-            for (const child of this.children) {
-                if (!child.is_selected) return false;
-            }
-            return true;
-        } else if (this.inputType === "multiple") {
-            for (const child of this.children) {
-                if (child.required && !child.is_selected) return false;
-            }
-            return true;
         }
 
-        return true;
+        if (this.on_select != null) {
+            this.on_select(this.is_selected);
+        }
     }
 
+
     compile() {
+        if (!this.is_selected) return null;
+
         if (this.inputType === "text") {
             return { key: this.key, value: this.data };
         } else if (this.inputType === "mutual") {
@@ -135,48 +109,32 @@ class Choice {
                         value: child.compile()
                     };
             }
+            return null;
         } else if (this.inputType === "multiple" || this.inputType === "property") {
             const data = [];
             for (const child of this.children) {
-                if (child.is_selected) data.push(child.compile());
+                if (child.is_selected) {
+                    const cc = child.compile();
+                    if(cc != null) data.push(cc);
+                }
             }
             return {
                 key: this.key,
                 value: data
             };
-        } else return { key: this.key };
-    }
-
-    relax_compile() {
-        if (this.inputType === "text") {
-            if (!this.is_selected) return null;
-            return { key: this.key, value: this.data };
-        } else if (this.inputType === "multiple" || this.inputType === "property" || this.inputType === "mutual") {
-            const data = [];
-            let count_req = 0;
-            for (const child of this.children) {
-                const child_result = child.relax_compile();
-                if (child_result != null)
-                    data.push(child_result);
-                if(child.required)
-                    count_req += 1;
-            }
-            if (data.length > 0 || (this.inputType === "multiple" && count_req === 0)) {
-                return {
-                    key: this.key,
-                    value: data
-                };
-            } else {
-                return null;
-            }
-        } else if (this.inputType == null) {
-            if (!this.is_selected) return null;
+        }
+        if (this.inputType == null) {
             return { key: this.key };
         }
     }
 
+
     __decompile(annotation) {
-        if (Array.isArray(annotation.value)) {
+
+        if (this.inputType === "text") {
+            this.set(annotation.value);
+            if (this.on_data != null) this.on_data(this.data);
+        } else if (this.inputType === "multiple" || this.inputType === "property") {
             for (const item of annotation.value) {
                 for (const child of this.children) {
                     if (item.key === child.key) {
@@ -184,31 +142,44 @@ class Choice {
                     }
                 }
             }
-        } else if (this.inputType === "text") {
-            this.set_data(annotation.value);
-            if (this.on_data != null) this.on_data(this.data);
-        } else if (this.inputType != null) {
+        } else if (this.inputType === "mutual") {
+
+            // if (Array.isArray(annotation.value)) {
+            //     for (const item of annotation.value) {
+            //         for (const child of this.children) {
+            //             if (item.key === child.key) {
+            //                 child.__decompile(item);
+            //             }
+            //         }
+            //     }
+            // }
+
             for (const child of this.children) {
                 if (annotation.value.key === child.key) {
                     child.__decompile(annotation.value);
+                    break;
                 }
             }
+        } else if (this.inputType == null) {
+
         }
 
-        if (this.conditions_met()) {
-            this.is_selected = true;
-            if (this.on_select != null) this.on_select(true);
-        }        
+        this.is_selected = true;
+        if (this.on_select != null) this.on_select(true);
     }
 
     decompile(annotation) {
-        this.select(false);
+        this.unset();
         this.__decompile(annotation);
     }
 
     validate(annotation) {
+        if (annotation.key !== this.key) return false;
 
-        if (this.inputType === "property") {
+        if (this.inputType === "text") {
+            if (typeof annotation.value === 'string' || annotation.value instanceof String)
+                return true;
+        } else if (this.inputType === "property") {
             if (!Array.isArray(annotation.value)) return false;
             if (annotation.value.length !== this.children.length) return false;
 
@@ -250,113 +221,70 @@ class Choice {
                     return false;
             }
             // To do: check duplication?
-        } else if (this.inputType === "text") {
-            if (typeof annotation.value === 'string' || annotation.value instanceof String)
-                return true;
         } else if (this.inputType === "mutual") {
-            if (Array.isArray(annotation.value)) {
-                let result = false;
-                for (const c of this.children) {
-                    for (const item of annotation.value) {
-                        if (item.key === c.key) {
-                            if (c.validate(item)) {
-                                return true;
-                            }
-                        }
-                    }
-                }
+            if (annotation.value == null || annotation.value.key == null)
                 return false;
-            } else {
-                if (annotation.value == null || annotation.value.key == null)
-                    return false;
-                for (const child of this.children) {
-                    if (annotation.value.key === child.key) {
-                        return child.validate(annotation.value);
-                    }
+            for (const child of this.children) {
+                if (annotation.value.key === child.key) {
+                    return child.validate(annotation.value);
                 }
             }
+        } else if (this.inputType == null) {
+
         }
 
         return true;
     }
 
-    get_compile_errors(annotation) {
-        // check this node against an annotation
+    get_compile_errors() {
         // if this node.get_compile_errors is called, meaning we expected this node to be selected.
 
         const errors = [];
 
-        const find_match = function(child) {
-            if (annotation == null || annotation.value == null) return null;
-            if (Array.isArray(annotation.value)) {
-                for (const ac of annotation.value) {
-                    if (ac.key == child.key)
-                        return ac;
-                }
-            }else if(annotation.value.key == child.key){
-                return annotation.value;
-            }
-            return null;
-        }
+        if (!this.is_selected) {
+            errors.push({
+                node: this,
+                error: -1
+            });
 
-        if (this.inputType === "property") {
-            for (const c of this.children) {
-                const ac = find_match(c);
-                if (ac != null) {
-                    errors.push(...c.get_compile_errors(ac));
-                } else {
+        } else {
+
+            if (this.inputType === "property") {
+                for (const c of this.children) {
                     errors.push(...c.get_compile_errors());
                 }
-            }
-        } else if (this.inputType === "multiple") {
-            // check required
-            for (const c of this.children) {
-                if (c.required) {
-                    const ac = find_match(c);
-                    if (ac != null) {
-                        errors.push(...c.get_compile_errors(ac));
-                    } else {
+            } else if (this.inputType === "multiple") {
+                // check required
+                for (const c of this.children) {
+                    if (c.required) {
                         errors.push(...c.get_compile_errors());
                     }
                 }
-            }
-        } else if (this.inputType === "mutual") {
-            let match_count = 0;
-            for (const c of this.children) {
-                const ac = find_match(c);
-                if (ac != null) {
-                    errors.push(...c.get_compile_errors(ac));
-                    match_count += 1;
+            } else if (this.inputType === "mutual") {
+                let match_count = 0;
+                for (const c of this.children) {
+                    if (c.is_selected) {
+                        errors.push(...c.get_compile_errors());
+                        match_count += 1;
+                    }
                 }
-            }
-            if (match_count == 0) {
-                errors.push({
-                    node: this,
-                    error: -3
-                });
-            }
-        } else if (this.inputType === "text") {
-            if (annotation == null || annotation.key !== this.key) {
-                errors.push({
-                    node: this,
-                    error: -1
-                });
-            } else {
-                if (annotation.key !== this.key ||
-                    !(typeof annotation.value === 'string' || annotation.value instanceof String)) {
+                if (match_count == 0 || match_count > 1) {
+                    errors.push({
+                        node: this,
+                        error: -3
+                    });
+                }
+            } else if (this.inputType === "text") {
+                if (!(typeof this.data === 'string' || this.data instanceof String)) {
                     errors.push({
                         node: this,
                         error: -2
                     });
                 }
+            } else if (this.inputType == null) {
+
             }
-        } else if (this.inputType == null) {
-            if (annotation == null || annotation.key !== this.key) {
-                errors.push({
-                    node: this,
-                    error: -1
-                });
-            }
+
         }
 
         return errors;
@@ -369,7 +297,7 @@ class Choice {
             case -2:
                 return "Value of the text field is not string.";
             case -3:
-                return "The mutual field is not selected.";
+                return "The mutual field is not selected or over selected.";
             default:
                 return "Unknown error";
         }

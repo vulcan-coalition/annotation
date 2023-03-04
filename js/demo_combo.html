@@ -51,6 +51,15 @@
                     root.classList.add("deselecting");
                     root.classList.remove("selecting");
                 }
+                const select = root.querySelector(":scope > select");
+                if (select != null) {
+                    for (const child of logic_node.children) {
+                        if (child.is_selected) {
+                            select.value = child.key;
+                            break;
+                        }
+                    }
+                }
             });
 
             // create children
@@ -66,8 +75,7 @@
                     });
                     text.addEventListener('change', function(e) {
                         e.stopPropagation();
-                        logic_node.set_data(text.value);
-                        logic_node.select(true);
+                        logic_node.set(text.value);
                     });
                     logic_node.set_on_data(function(data) {
                         text.value = data;
@@ -89,13 +97,13 @@
                     root.appendChild(select);
                     select.addEventListener('click', function(e) {
                         e.stopPropagation();
+                        logic_node.set(e.target.value);
                         while (holder.firstChild) {
                             holder.removeChild(holder.firstChild);
                         }
                         for (const child of logic_node.children) {
                             if (child.key === e.target.value) {
                                 holder.appendChild(build_ui_node(child));
-                                child.select();
                                 break;
                             }
                         }
@@ -115,6 +123,7 @@
                     root.appendChild(ul);
                     root.addEventListener('click', function(e) {
                         e.stopPropagation();
+                        logic_node.toggle();
                         ul.classList.toggle("hide");
                         ul.classList.toggle("show");
                     });
@@ -124,101 +133,16 @@
                 // leaf node
                 root.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    logic_node.select();
+                    logic_node.toggle();
                 });
             }
 
             return root;
         };
 
-        const initialize = function() {
-
-            const root_logic = new Choice({
-                "inputType": "mutual",
-                "choices": [{
-                        "key": "car",
-                        "inputType": "mutual",
-                        "description": "รถ",
-                        "metadata": {
-                            "a": 1,
-                            "b": {
-                                "c": 2
-                            }
-                        },
-                        "choices": [{
-                                "key": "type",
-                                "inputType": "mutual",
-                                "description": "ประเภท",
-                                "choices": [{
-                                        "key": "car",
-                                        "description": "รถเก๋ง"
-                                    },
-                                    {
-                                        "key": "van",
-                                        "description": "รถตู้"
-                                    },
-                                    {
-                                        "key": "taxi",
-                                        "description": "แท็กซี่"
-                                    },
-                                    {
-                                        "key": "pickup",
-                                        "description": "รถกระบะ"
-                                    },
-                                    {
-                                        "key": "truck",
-                                        "description": "รถบรรทุก"
-                                    },
-                                    {
-                                        "key": "tuktuk",
-                                        "description": "รถตุ๊กตุ๊ก"
-                                    },
-                                    {
-                                        "key": "motorcycle",
-                                        "description": "รถมอไซด์"
-                                    },
-                                    {
-                                        "key": "bus",
-                                        "description": "รถประจำทาง"
-                                    }
-                                ]
-                            },
-                            {
-                                "key": "lp_text",
-                                "inputType": "text",
-                                "description": "เลขทะเบียน"
-                            }
-                        ]
-                    },
-                    {
-                        "key": "lp",
-                        "inputType": "property",
-                        "description": "ป้ายทะเบียน",
-                        "choices": [{
-                                "key": "lp_color",
-                                "description": "มีสี"
-                            },
-                            {
-                                "key": "lp_type",
-                                "inputType": "mutual",
-                                "description": "ประเภทป้าย",
-                                "choices": [{
-                                        "key": "lpr",
-                                        "description": "ป้ายทะเบียนรถยนต์"
-                                    },
-                                    {
-                                        "key": "mlpr",
-                                        "description": "ป้ายทะเบียนรถมอไซด์"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                ]
-            }, null);
-
+        const initialize = function(category_data) {
+            const root_logic = new Choice(category_data, null);
             document.querySelector('#annotation').appendChild(build_ui_node(root_logic));
-
             return new Promise(function(resolve, reject) {
                 resolve(root_logic);
             });
@@ -226,44 +150,47 @@
 
         return {
             initialize: initialize
-
-
         };
     }();
 
     window.onload = function() {
-        category.initialize().then(function(category_node) {
+        fetch('./category/car.json')
+            .then(function(response) {
+                return response.json();
+            }).then(category.initialize).then(function(category_node) {
 
-            const compile_button = document.querySelector('#compile-button');
-            const validate_button = document.querySelector('#validate-button');
-            const decompile_button = document.querySelector('#decompile-button');
-            const compile_result = document.querySelector('#compile-result');
+                const compile_button = document.querySelector('#compile-button');
+                const validate_button = document.querySelector('#validate-button');
+                const decompile_button = document.querySelector('#decompile-button');
+                const compile_result = document.querySelector('#compile-result');
 
-            compile_button.addEventListener('click', function(e) {
-                const compiled_object = category_node.compile();
-                compile_result.value = JSON.stringify(compiled_object);
-                const errors = category_node.get_compile_errors(compiled_object);
-                for (const err of errors) {
-                    err.node = err.node.description || err.node.key;
-                    err.error = Choice.interpret_error(err.error);
-                }
-                document.querySelector('#compile-error').innerHTML = JSON.stringify(errors);
+                compile_button.addEventListener('click', function(e) {
+                    const compiled_object = category_node.compile();
+                    compile_result.value = JSON.stringify(compiled_object);
+                    const errors = category_node.get_compile_errors(compiled_object);
+                    for (const err of errors) {
+                        err.node = err.node.description || err.node.key;
+                        err.error = Choice.interpret_error(err.error);
+                    }
+                    document.querySelector('#compile-error').innerHTML = JSON.stringify(errors);
+                });
+
+                validate_button.addEventListener('click', function(e) {
+                    if (category_node.validate(JSON.parse(compile_result.value))) {
+                        alert("Valid!");
+                    } else {
+                        alert("Invalid!");
+                    }
+                });
+
+                decompile_button.addEventListener('click', function(e) {
+                    category_node.decompile(JSON.parse(compile_result.value));
+                });
+
+            })
+            .catch(function(err) {
+                console.log(err);
             });
-
-            validate_button.addEventListener('click', function(e) {
-                if (category_node.validate(JSON.parse(compile_result.value))) {
-                    alert("Valid!");
-                } else {
-                    alert("Invalid!");
-                }
-            });
-
-            decompile_button.addEventListener('click', function(e) {
-                category_node.select(false);
-                category_node.decompile(JSON.parse(compile_result.value));
-            });
-
-        });
     };
     </script>
 </body>

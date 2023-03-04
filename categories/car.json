@@ -1,0 +1,86 @@
+{
+    "inputType": "multiple",
+    "choices": [
+    {
+        "key": "car",
+        "inputType": "mutual",
+        "description": "รถ",
+        "metadata":
+        {
+            "a": 1,
+            "b":
+            {
+                "c": 2
+            }
+        },
+        "choices": [
+        {
+            "key": "type",
+            "inputType": "mutual",
+            "description": "ประเภท",
+            "choices": [
+            {
+                "key": "car",
+                "description": "รถเก๋ง"
+            },
+            {
+                "key": "van",
+                "description": "รถตู้"
+            },
+            {
+                "key": "taxi",
+                "description": "แท็กซี่"
+            },
+            {
+                "key": "pickup",
+                "description": "รถกระบะ"
+            },
+            {
+                "key": "truck",
+                "description": "รถบรรทุก"
+            },
+            {
+                "key": "tuktuk",
+                "description": "รถตุ๊กตุ๊ก"
+            },
+            {
+                "key": "motorcycle",
+                "description": "รถมอไซด์"
+            },
+            {
+                "key": "bus",
+                "description": "รถประจำทาง"
+            }]
+        },
+        {
+            "key": "lp_text",
+            "inputType": "text",
+            "description": "เลขทะเบียน"
+        }]
+    },
+    {
+        "key": "lp",
+        "inputType": "property",
+        "description": "ป้ายทะเบียน",
+        "required": true,
+        "choices": [
+        {
+            "key": "lp_color",
+            "description": "มีสี"
+        },
+        {
+            "key": "lp_type",
+            "inputType": "mutual",
+            "description": "ประเภทป้าย",
+            "choices": [
+            {
+                "key": "lpr",
+                "description": "ป้ายทะเบียนรถยนต์"
+            },
+            {
+                "key": "mlpr",
+                "description": "ป้ายทะเบียนรถมอไซด์"
+            }]
+        }]
+    }]
+}

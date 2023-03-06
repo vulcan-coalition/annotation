@@ -6,7 +6,8 @@ class Choice {
     constructor(category, parent) {
         this.parent = parent;
 
-        this.inputType = category.inputType;
+        // backward compatibility
+        this.inputType = category.choiceType || category.inputType;
         this.required = category.required || false;
 
         this.key = category.key || null;

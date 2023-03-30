@@ -143,12 +143,13 @@ class Choice {
                 }
             }
         } else if (this.inputType === "mutual") {
-            for (const child of this.children) {
-                if (annotation.value.key === child.key) {
-                    child.__decompile(annotation.value);
-                    break;
+            if(annotation.value != null)
+                for (const child of this.children) {
+                    if (annotation.value.key === child.key) {
+                        child.__decompile(annotation.value);
+                        break;
+                    }
                 }
-            }
         } else if (this.inputType == null) {
 
         }

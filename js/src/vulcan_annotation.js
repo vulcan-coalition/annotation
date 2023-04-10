@@ -41,9 +41,9 @@ class Choice {
     }
 
     toggle() {
-        if(this.is_selected) {
+        if (this.is_selected) {
             this.unset();
-        }else{
+        } else {
             this.set();
         }
     }
@@ -69,7 +69,7 @@ class Choice {
 
         }
 
-        if(this.parent != null && this.parent.inputType === "mutual") {
+        if (this.parent != null && this.parent.inputType === "mutual") {
             for (const child of this.parent.children) {
                 if (child.is_selected && child !== this) {
                     child.unset();
@@ -96,8 +96,7 @@ class Choice {
         }
     }
 
-
-    compile() {
+    __compile() {
         if (!this.is_selected) return null;
 
         if (this.inputType === "text") {
@@ -107,7 +106,7 @@ class Choice {
                 if (child.is_selected)
                     return {
                         key: this.key,
-                        value: child.compile()
+                        value: child.__compile()
                     };
             }
             return null;
@@ -115,8 +114,8 @@ class Choice {
             const data = [];
             for (const child of this.children) {
                 if (child.is_selected) {
-                    const cc = child.compile();
-                    if(cc != null) data.push(cc);
+                    const cc = child.__compile();
+                    if (cc != null) data.push(cc);
                 }
             }
             return {
@@ -127,6 +126,13 @@ class Choice {
         if (this.inputType == null) {
             return { key: this.key };
         }
+    }
+
+
+    compile(value_first = false) {
+        const data_obj = this.__compile();
+        if (value_first) return data_obj.value;
+        return data_obj;
     }
 
 
@@ -143,7 +149,7 @@ class Choice {
                 }
             }
         } else if (this.inputType === "mutual") {
-            if(annotation.value != null)
+            if (annotation.value != null)
                 for (const child of this.children) {
                     if (annotation.value.key === child.key) {
                         child.__decompile(annotation.value);
@@ -170,13 +176,13 @@ class Choice {
         }
     }
 
-    decompile(annotation) {
+    decompile(annotation, value_first = false) {
         this.unset();
-        this.__decompile(annotation);
+        this.__decompile(value_first ? ({ value: annotation }) : annotation);
         this.__fireevents();
     }
 
-    validate(annotation) {
+    __validate(annotation) {
         if (annotation.key !== this.key) return false;
 
         if (this.inputType === "text") {
@@ -193,7 +199,7 @@ class Choice {
                         matched = item;
                     }
                 }
-                if (matched == null || !c.validate(matched))
+                if (matched == null || !c.__validate(matched))
                     return false;
             }
 
@@ -208,7 +214,7 @@ class Choice {
                             matched = item;
                         }
                     }
-                    if (matched == null || !c.validate(matched))
+                    if (matched == null || !c.__validate(matched))
                         return false;
                 }
             }
@@ -220,7 +226,7 @@ class Choice {
                         matched = c;
                     }
                 }
-                if (matched == null || !matched.validate(item))
+                if (matched == null || !matched.__validate(item))
                     return false;
             }
             // To do: check duplication?
@@ -229,7 +235,7 @@ class Choice {
                 return false;
             for (const child of this.children) {
                 if (annotation.value.key === child.key) {
-                    return child.validate(annotation.value);
+                    return child.__validate(annotation.value);
                 }
             }
         } else if (this.inputType == null) {
@@ -237,6 +243,11 @@ class Choice {
         }
 
         return true;
+    }
+
+    validate(annotation, value_first = false) {
+        if (value_first) return this.__validate({ key: null, value: annotation });
+        return this.__validate(annotation);
     }
 
     get_compile_errors() {
@@ -247,7 +258,7 @@ class Choice {
         if (!this.is_selected) {
             errors.push({
                 node: this,
-                error: (this.inputType === "text"? -2: -1)
+                error: (this.inputType === "text" ? -2 : -1)
             });
 
         } else {

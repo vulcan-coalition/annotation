@@ -106,3 +106,7 @@ textarea {
 textarea:blank {
     height: 100px;
 }
+
+.param {
+  color: #ff5f;
+}

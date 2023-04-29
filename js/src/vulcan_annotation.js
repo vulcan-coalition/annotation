@@ -1,5 +1,5 @@
 /**
-version: 2.0
+version: 2.2
 **/
 
 class Choice {
@@ -29,7 +29,6 @@ class Choice {
                 child.parent = this;
             }
         }
-
     }
 
     set_on_data(on_data) {
@@ -64,9 +63,7 @@ class Choice {
                 }
             }
         } else if (this.inputType === "multiple" || this.inputType === "property") {
-
         } else if (this.inputType == null) {
-
         }
 
         if (this.parent != null && this.parent.inputType === "mutual") {
@@ -106,7 +103,7 @@ class Choice {
                 if (child.is_selected)
                     return {
                         key: this.key,
-                        value: child.__compile()
+                        value: child.__compile(),
                     };
             }
             return null;
@@ -120,7 +117,7 @@ class Choice {
             }
             return {
                 key: this.key,
-                value: data
+                value: data,
             };
         }
         if (this.inputType == null) {
@@ -128,13 +125,11 @@ class Choice {
         }
     }
 
-
     compile(value_first = false) {
         const data_obj = this.__compile();
         if (value_first) return data_obj.value;
         return data_obj;
     }
-
 
     __decompile(annotation) {
         this.is_selected = true;
@@ -157,11 +152,10 @@ class Choice {
                     }
                 }
         } else if (this.inputType == null) {
-
         }
     }
 
-    __fireevents = function() {
+    __fireevents = function () {
         if (this.on_select != null) this.on_select(true);
         if (this.inputType === "text") {
             if (this.on_data != null) this.on_data(this.data);
@@ -172,13 +166,12 @@ class Choice {
                 }
             }
         } else if (this.inputType == null) {
-
         }
-    }
+    };
 
     decompile(annotation, value_first = false) {
         this.unset();
-        this.__decompile(value_first ? ({ value: annotation }) : annotation);
+        this.__decompile(value_first ? { value: annotation } : annotation);
         this.__fireevents();
     }
 
@@ -186,8 +179,7 @@ class Choice {
         if (annotation.key !== this.key) return false;
 
         if (this.inputType === "text") {
-            if (typeof annotation.value === 'string' || annotation.value instanceof String)
-                return true;
+            if (typeof annotation.value === "string" || annotation.value instanceof String) return true;
         } else if (this.inputType === "property") {
             if (!Array.isArray(annotation.value)) return false;
             if (annotation.value.length !== this.children.length) return false;
@@ -199,10 +191,8 @@ class Choice {
                         matched = item;
                     }
                 }
-                if (matched == null || !c.__validate(matched))
-                    return false;
+                if (matched == null || !c.__validate(matched)) return false;
             }
-
         } else if (this.inputType === "multiple") {
             if (!Array.isArray(annotation.value)) return false;
             // check required
@@ -214,8 +204,7 @@ class Choice {
                             matched = item;
                         }
                     }
-                    if (matched == null || !c.__validate(matched))
-                        return false;
+                    if (matched == null || !c.__validate(matched)) return false;
                 }
             }
             // check has key
@@ -226,20 +215,17 @@ class Choice {
                         matched = c;
                     }
                 }
-                if (matched == null || !matched.__validate(item))
-                    return false;
+                if (matched == null || !matched.__validate(item)) return false;
             }
             // To do: check duplication?
         } else if (this.inputType === "mutual") {
-            if (annotation.value == null || annotation.value.key == null)
-                return false;
+            if (annotation.value == null || annotation.value.key == null) return false;
             for (const child of this.children) {
                 if (annotation.value.key === child.key) {
                     return child.__validate(annotation.value);
                 }
             }
         } else if (this.inputType == null) {
-
         }
 
         return true;
@@ -258,11 +244,9 @@ class Choice {
         if (!this.is_selected) {
             errors.push({
                 node: this,
-                error: (this.inputType === "text" ? -2 : -1)
+                error: this.inputType === "text" ? -2 : -1,
             });
-
         } else {
-
             if (this.inputType === "property") {
                 for (const c of this.children) {
                     errors.push(...c.get_compile_errors());
@@ -285,20 +269,18 @@ class Choice {
                 if (match_count == 0 || match_count > 1) {
                     errors.push({
                         node: this,
-                        error: -3
+                        error: -3,
                     });
                 }
             } else if (this.inputType === "text") {
-                if (!(typeof this.data === 'string' || this.data instanceof String)) {
+                if (!(typeof this.data === "string" || this.data instanceof String)) {
                     errors.push({
                         node: this,
-                        error: -2
+                        error: -2,
                     });
                 }
             } else if (this.inputType == null) {
-
             }
-
         }
 
         return errors;
@@ -317,4 +299,57 @@ class Choice {
         }
     }
 
+    __querySelector(annotation, tokens) {
+        const token = tokens[0];
+        const parts = token.split(".");
+
+        if (annotation.key === parts[0]) {
+            tokens = tokens.slice(1);
+            if (tokens.length === 0) {
+                if (parts.length === 1) {
+                    return annotation.value;
+                } else if (parts[1] === "description") {
+                    if (Array.isArray(annotation.value)) {
+                        for (const c of this.children) {
+                            for (const child of annotation.value) {
+                                if (c.key === child.key) {
+                                    return c.description;
+                                }
+                            }
+                        }
+                    } else if (annotation.value != null && annotation.value.constructor === Object) {
+                        for (const c of this.children) {
+                            if (c.key === annotation.value.key) {
+                                return c.description;
+                            }
+                        }
+                        return null;
+                    }
+                    return null;
+                }
+            }
+        }
+
+        if (Array.isArray(annotation.value)) {
+            for (const c of this.children) {
+                for (const child of annotation.value) {
+                    if (c.key === child.key) {
+                        const result = c.__querySelector(child, tokens);
+                        if (result != null) return result;
+                        break;
+                    }
+                }
+            }
+        } else if (annotation.value != null && annotation.value.constructor === Object) {
+            return this.children[0].__querySelector(annotation.value, tokens);
+        }
+        return null;
+    }
+
+    querySelector(annotation, selector, value_first = false) {
+        // topic complaint topic.description
+        const tokens = selector.split(" ");
+        if (value_first) return this.__querySelector({ key: null, value: annotation }, tokens);
+        return this.__querySelector(annotation, tokens);
+    }
 }

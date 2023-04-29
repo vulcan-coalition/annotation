@@ -1,5 +1,5 @@
 /**
-version: 2.2
+version: 2.3
 **/
 
 class Choice {
@@ -76,6 +76,9 @@ class Choice {
 
         if (this.on_select != null) {
             this.on_select(this.is_selected);
+        }
+        if (this.on_data != null) {
+            this.on_data(this.data);
         }
     }
 

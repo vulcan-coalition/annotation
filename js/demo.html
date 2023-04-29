@@ -65,14 +65,18 @@
             });
         });
 
-        const r = await fetch('./category/car.json');
-        const response = await r.json();
-        let category_node = await category.initialize(response);
+        let category_node = null;
+        try {
+            const r = await fetch('./category/car.json');
+            const response = await r.json();
+            category_node = await category.initialize(response);
+            const category_text = document.querySelector('#category_text');
+            category_text.value = JSON.stringify(response, null, 4);
+            category_text.dispatchEvent(new Event('input'));
+        }catch(e) {
 
-        const category_text = document.querySelector('#category_text');
+        }
 
-        category_text.value = JSON.stringify(response, null, 4);
-        category_text.dispatchEvent(new Event('input'));
         category_text.addEventListener('keydown', async function(e) {
             if (e.keyCode === 13) {
                 category_node = await category.initialize(JSON.parse(category_text.value));

@@ -310,7 +310,7 @@ class Choice {
             tokens = tokens.slice(1);
             if (tokens.length === 0) {
                 if (parts.length === 1) {
-                    return annotation.value;
+                    return (this.inputType == null)? true : annotation.value;
                 } else if (parts[1] === "description") {
                     if (Array.isArray(annotation.value)) {
                         for (const c of this.children) {

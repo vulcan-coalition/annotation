@@ -312,23 +312,7 @@ class Choice {
                 if (parts.length === 1) {
                     return (this.inputType == null)? true : annotation.value;
                 } else if (parts[1] === "description") {
-                    if (Array.isArray(annotation.value)) {
-                        for (const c of this.children) {
-                            for (const child of annotation.value) {
-                                if (c.key === child.key) {
-                                    return c.description;
-                                }
-                            }
-                        }
-                    } else if (annotation.value != null && annotation.value.constructor === Object) {
-                        for (const c of this.children) {
-                            if (c.key === annotation.value.key) {
-                                return c.description;
-                            }
-                        }
-                        return null;
-                    }
-                    return null;
+                    return this.description;
                 }
             }
         }
@@ -344,7 +328,11 @@ class Choice {
                 }
             }
         } else if (annotation.value != null && annotation.value.constructor === Object) {
-            return this.children[0].__querySelector(annotation.value, tokens);
+            for (const c of this.children) {
+                if (c.key === annotation.value.key) {
+                    return c.__querySelector(annotation.value, tokens);
+                }
+            }
         }
         return null;
     }

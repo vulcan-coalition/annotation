@@ -306,7 +306,7 @@ class Choice {
         const token = tokens[0];
         const parts = token.split(".");
 
-        if (annotation.key === parts[0]) {
+        if (annotation.key === parts[0] || parts[0] === "*") {
             tokens = tokens.slice(1);
             if (tokens.length === 0) {
                 if (parts.length === 1) {

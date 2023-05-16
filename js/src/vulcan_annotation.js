@@ -1,5 +1,6 @@
 /**
-version: 2.3
+version: 2.4
+Fixed: mutual not first item
 **/
 
 class Choice {

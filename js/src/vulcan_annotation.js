@@ -311,9 +311,11 @@ class Choice {
             tokens = tokens.slice(1);
             if (tokens.length === 0) {
                 if (parts.length === 1) {
-                    return (this.inputType == null)? true : annotation.value;
+                    return this.inputType == null ? true : annotation.value;
                 } else if (parts[1] === "description") {
                     return this.description;
+                } else if (parts[1] === "key") {
+                    return this.key;
                 }
             }
         }

@@ -1,6 +1,6 @@
 /**
-version: 2.4
-Fixed: mutual not first item
+version: 2.5
+added: querySelector for key
 **/
 
 class Choice {

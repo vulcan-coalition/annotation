@@ -1,3 +1,10 @@
+"""
+version: 2.6
+added: queryMetadata
+"""
+
+
+
 import json
 import os
 import shortuuid
@@ -29,6 +36,8 @@ class Vulcan_annotation:
                     return self.description
                 elif parts[1] == "key":
                     return self.key
+                elif parts[1] == "inputType":
+                    return self.inputType
 
         if "value" in annotation:
             value = annotation["value"]
@@ -81,6 +90,36 @@ class Vulcan_annotation:
         for c in self.children:
             nodes += c.get_all_nodes()
         return nodes
+    
+
+    def __queryMetadata(self, tokens):
+        token = tokens[0]
+        parts = token.split(".")
+
+        if self.key == parts[0] or parts[0] == "*":
+            tokens = tokens[1:]
+            if len(tokens) == 0:
+                if len(parts) == 1:
+                    return None
+                elif parts[1] == "description":
+                    return self.description
+                elif parts[1] == "key":
+                    return self.key
+                elif parts[1] == "inputType":
+                    return self.inputType
+
+        if isinstance(self.children, list):
+            for c in self.children:
+                result = c.__queryMetadata(tokens)
+                if result is not None:
+                    return result
+
+        return None
+
+    def queryMetadata(self, selector):
+        tokens = selector.split(" ")
+        result = self.__queryMetadata(tokens)
+        return None if result is None else result
 
 
 if __name__ == '__main__':

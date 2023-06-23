@@ -1,6 +1,6 @@
 /**
-version: 2.5
-added: querySelector for key
+version: 2.6
+added: queryMetadata
 **/
 
 class Choice {
@@ -316,6 +316,8 @@ class Choice {
                     return this.description;
                 } else if (parts[1] === "key") {
                     return this.key;
+                } else if (parts[1] === "inputType") {
+                    return this.inputType;
                 }
             }
         }
@@ -345,5 +347,38 @@ class Choice {
         const tokens = selector.split(" ");
         if (value_first) return this.__querySelector({ key: null, value: annotation }, tokens);
         return this.__querySelector(annotation, tokens);
+    }
+
+    __queryMetadata(tokens) {
+        const token = tokens[0];
+        const parts = token.split(".");
+
+        if (this.key === parts[0] || parts[0] === "*") {
+            tokens = tokens.slice(1);
+            if (tokens.length === 0) {
+                if (parts.length === 1) {
+                    return null;
+                } else if (parts[1] === "description") {
+                    return this.description;
+                } else if (parts[1] === "key") {
+                    return this.key;
+                } else if (parts[1] === "inputType") {
+                    return this.inputType;
+                }
+            }
+        }
+
+        if (Array.isArray(this.children)) {
+            for (const c of this.children) {
+                const result = c.__queryMetadata(tokens);
+                if (result != null) return result;
+            }
+        }
+        return null;
+    }
+
+    queryMetadata(selector) {
+        const tokens = selector.split(" ");
+        return this.__queryMetadata(tokens);
     }
 }

@@ -4,10 +4,10 @@ added: queryMetadata
 """
 
 
-
 import json
 import os
 import shortuuid
+
 
 class Vulcan_annotation:
 
@@ -90,7 +90,6 @@ class Vulcan_annotation:
         for c in self.children:
             nodes += c.get_all_nodes()
         return nodes
-    
 
     def __queryMetadata(self, tokens):
         token = tokens[0]

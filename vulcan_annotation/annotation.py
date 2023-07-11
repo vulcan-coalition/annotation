@@ -1,6 +1,6 @@
 """
-version: 2.7
-added: queryMetadata
+version: 2.8
+added: set_bubble
 """
 
 
@@ -72,6 +72,15 @@ class Annotation:
                 child.unset()
         if self.on_select:
             self.on_select(self.is_selected)
+
+
+    def set_bubble(self, data=None):
+        self.is_selected = True
+        if self.inputType == "text":
+            self.data = data
+        if self.parent is not None:
+            self.parent.set_bubble()
+
 
     def __compile(self):
         if not self.is_selected:
@@ -261,30 +270,6 @@ if __name__ == '__main__':
                 {
                     "key": "van",
                     "description": "รถตู้"
-                },
-                {
-                    "key": "taxi",
-                    "description": "แท็กซี่"
-                },
-                {
-                    "key": "pickup",
-                    "description": "รถกระบะ"
-                },
-                {
-                    "key": "truck",
-                    "description": "รถบรรทุก"
-                },
-                {
-                    "key": "tuktuk",
-                    "description": "รถตุ๊กตุ๊ก"
-                },
-                {
-                    "key": "motorcycle",
-                    "description": "รถมอไซด์"
-                },
-                {
-                    "key": "bus",
-                    "description": "รถประจำทาง"
                 }]
             },
             {
@@ -320,5 +305,6 @@ if __name__ == '__main__':
         }]
     })
 
-    va.queryMetadata("lp_text").set("1234")
+    va.queryMetadata("lp_text").set_bubble("1234")
+    va.queryMetadata("lp_color").set_bubble()
     print(va.compile())

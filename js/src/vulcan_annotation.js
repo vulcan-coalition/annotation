@@ -1,6 +1,6 @@
 /**
 version: 2.8
-added: queryMetadata return current node
+added: queryMetadata return current node, set_bubble
 **/
 
 class Choice {
@@ -94,6 +94,16 @@ class Choice {
 
         if (this.on_select != null) {
             this.on_select(this.is_selected);
+        }
+    }
+
+    set_bubble(data) {
+        this.is_selected = true;
+        if (this.inputType == "text") {
+            this.data = data;
+        }
+        if (this.parent != null) {
+            this.parent.set_bubble();
         }
     }
 

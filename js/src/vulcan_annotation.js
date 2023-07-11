@@ -1,6 +1,6 @@
 /**
-version: 2.7
-added: queryMetadata return current data
+version: 2.8
+added: queryMetadata return current node
 **/
 
 class Choice {
@@ -357,6 +357,8 @@ class Choice {
             tokens = tokens.slice(1);
             if (tokens.length === 0) {
                 if (parts.length === 1) {
+                    return this;
+                } else if (parts[1] === "data") {
                     return this.inputType == null ? this.is_selected : this.data;
                 } else if (parts[1] === "description") {
                     return this.description;

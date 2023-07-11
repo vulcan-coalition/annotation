@@ -1,1 +1,1 @@
-from vulcan_annotation import Annotation
+from annotation import Annotation

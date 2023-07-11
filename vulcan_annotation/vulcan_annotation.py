@@ -9,7 +9,7 @@ import os
 import shortuuid
 
 
-class Vulcan_annotation:
+class Annotation:
 
     def __init__(self, category):
         self.id = shortuuid.uuid()
@@ -21,7 +21,7 @@ class Vulcan_annotation:
         self.children = []
         if "choices" in category:
             for child in category["choices"]:
-                self.children.append(Vulcan_annotation(child))
+                self.children.append(Annotation(child))
 
     def __querySelector(self, annotation, tokens):
         token = tokens[0]

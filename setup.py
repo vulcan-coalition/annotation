@@ -6,9 +6,17 @@ except ImportError:
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
+import os
+import shutil
+# copy js/src directory into package js directory
+
+if os.path.exists("build/lib/vulcan_annotation/js"):
+    shutil.rmtree("build/lib/vulcan_annotation/js")
+shutil.copytree("js/src", "build/lib/vulcan_annotation/js")
+
 setup(
     name="vulcan-annotation",
-    version="2.8",
+    version="2.9",
     author="Chatavut Viriyasuthee",
     author_email="chatavut@lab.ai",
     description="Vulcan annotation for structured data.",
@@ -16,7 +24,9 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/vulcan-coalition/vulcan_annotation",
     packages=["vulcan_annotation"],
-    package_data={},
+    package_data={
+        "": ["js/*"]
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",

@@ -1,6 +1,6 @@
 /**
-version: 2.8
-added: queryMetadata return current node, set_bubble
+version: 2.9
+added: immediate child query >
 **/
 
 class Choice {
@@ -314,8 +314,15 @@ class Choice {
     }
 
     __querySelector(annotation, tokens) {
-        const token = tokens[0];
-        const parts = token.split(".");
+        let parts = tokens[0].split(".");
+
+        if (parts[0] === ">") {
+            tokens = tokens.slice(1);
+            parts = tokens[0].split(".");
+            if (parts[0] !== this.key) {
+                return null;
+            }
+        }
 
         if (annotation.key === parts[0] || parts[0] === "*") {
             tokens = tokens.slice(1);
@@ -360,8 +367,15 @@ class Choice {
     }
 
     __queryMetadata(tokens) {
-        const token = tokens[0];
-        const parts = token.split(".");
+        let parts = tokens[0].split(".");
+
+        if (parts[0] === ">") {
+            tokens = tokens.slice(1);
+            parts = tokens[0].split(".");
+            if (parts[0] !== this.key) {
+                return null;
+            }
+        }
 
         if (this.key === parts[0] || parts[0] === "*") {
             tokens = tokens.slice(1);

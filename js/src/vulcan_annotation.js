@@ -1,5 +1,6 @@
 /**
-version: 2.8
+version: 2.8.1
+fixed: get compile error for multiple
 added: queryMetadata return current node, set_bubble
 **/
 
@@ -268,7 +269,7 @@ class Choice {
             } else if (this.inputType === "multiple") {
                 // check required
                 for (const c of this.children) {
-                    if (c.required) {
+                    if (c.required || c.is_selected) {
                         errors.push(...c.get_compile_errors());
                     }
                 }

@@ -1,6 +1,6 @@
 """
-version: 2.8
-added: set_bubble
+version: 2.9
+added: immediate child query >
 """
 
 
@@ -142,8 +142,12 @@ class Annotation:
 
 
     def __querySelector(self, annotation, tokens):
-        token = tokens[0]
-        parts = token.split(".")
+        parts = tokens[0].split(".")
+        if parts[0] == ">":
+            tokens = tokens[1:]
+            parts = tokens[0].split(".")
+            if parts[0] != self.key:
+                return None
 
         if annotation["key"] == parts[0] or parts[0] == "*":
             tokens = tokens[1:]
@@ -210,8 +214,12 @@ class Annotation:
         return nodes
 
     def __queryMetadata(self, tokens):
-        token = tokens[0]
-        parts = token.split(".")
+        parts = tokens[0].split(".")
+        if parts[0] == ">":
+            tokens = tokens[1:]
+            parts = tokens[0].split(".")
+            if parts[0] != self.key:
+                return None
 
         if self.key == parts[0] or parts[0] == "*":
             tokens = tokens[1:]
@@ -264,11 +272,22 @@ if __name__ == '__main__':
                 "description": "ประเภท",
                 "choices": [
                 {
-                    "key": "car",
-                    "description": "รถเก๋ง"
+                    "key": "a",
+                    "inputType": "mutual",
+                    "description": "รถเก๋ง",
+                    "choices": [
+                        {
+                            "key": "a",
+                            "description": "รถเก๋ง 4 ประตู"
+                        },
+                        {
+                            "key": "b",
+                            "description": "รถเก๋ง 2 ประตู"
+                        }
+                    ]
                 },
                 {
-                    "key": "van",
+                    "key": "b",
                     "description": "รถตู้"
                 }]
             },
@@ -304,6 +323,9 @@ if __name__ == '__main__':
             }]
         }]
     })
+
+    print(va.queryMetadata("car a.description"))
+    print(va.queryMetadata("a > a.description"))
 
     va.queryMetadata("lp_text").set_bubble("1234")
     va.queryMetadata("lp_color").set_bubble()

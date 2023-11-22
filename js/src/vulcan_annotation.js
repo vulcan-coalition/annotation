@@ -1,7 +1,6 @@
 /**
-version: 2.9.1
-fixed: get compile error for multiple
-added: immediate child query >
+version: 3.0
+changed: querySelector as a static function
 **/
 
 class Choice {
@@ -314,13 +313,13 @@ class Choice {
         }
     }
 
-    __querySelector(annotation, tokens) {
+    static __querySelector(annotation, tokens) {
         let parts = tokens[0].split(".");
 
         if (parts[0] === ">") {
             tokens = tokens.slice(1);
             parts = tokens[0].split(".");
-            if (parts[0] !== this.key) {
+            if (parts[0] !== annotation.key) {
                 return null;
             }
         }
@@ -329,42 +328,34 @@ class Choice {
             tokens = tokens.slice(1);
             if (tokens.length === 0) {
                 if (parts.length === 1) {
-                    return this.inputType == null ? true : annotation.value;
-                } else if (parts[1] === "description") {
-                    return this.description;
+                    return annotation.value == null ? true : annotation.value;
                 } else if (parts[1] === "key") {
-                    return this.key;
-                } else if (parts[1] === "inputType") {
-                    return this.inputType;
+                    return annotation.key;
                 }
             }
         }
 
         if (Array.isArray(annotation.value)) {
-            for (const c of this.children) {
-                for (const child of annotation.value) {
-                    if (c.key === child.key) {
-                        const result = c.__querySelector(child, tokens);
-                        if (result != null) return result;
-                        break;
-                    }
-                }
+            for (const child of annotation.value) {
+                const result = Choice.__querySelector(child, tokens);
+                if (result != null) return result;
             }
         } else if (annotation.value != null && annotation.value.constructor === Object) {
-            for (const c of this.children) {
-                if (c.key === annotation.value.key) {
-                    return c.__querySelector(annotation.value, tokens);
-                }
-            }
+            return Choice.__querySelector(annotation.value, tokens);
         }
         return null;
     }
 
-    querySelector(annotation, selector, value_first = false) {
+    static querySelector(annotation, selector, value_first = false) {
         // topic complaint topic.description
         const tokens = selector.split(" ");
-        if (value_first) return this.__querySelector({ key: null, value: annotation }, tokens);
-        return this.__querySelector(annotation, tokens);
+        if (value_first) return Choice.__querySelector({ key: null, value: annotation }, tokens);
+        return Choice.__querySelector(annotation, tokens);
+    }
+
+    querySelector(annotation, selector, value_first = false) {
+        // call static method
+        return Choice.querySelector(annotation, selector, value_first);
     }
 
     __queryMetadata(tokens) {

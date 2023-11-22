@@ -1,6 +1,6 @@
 """
-version: 2.9
-added: immediate child query >
+version: 3.0
+changed: querySelector as a static function
 """
 
 
@@ -141,50 +141,43 @@ class Annotation:
         self.__fireevents()
 
 
-    def __querySelector(self, annotation, tokens):
+    @staticmethod
+    def __querySelector(annotation, tokens):
         parts = tokens[0].split(".")
         if parts[0] == ">":
             tokens = tokens[1:]
             parts = tokens[0].split(".")
-            if parts[0] != self.key:
+            if parts[0] != annotation["key"]:
                 return None
 
         if annotation["key"] == parts[0] or parts[0] == "*":
             tokens = tokens[1:]
             if len(tokens) == 0:
                 if len(parts) == 1:
-                    return True if self.inputType is None else annotation["value"]
-                elif parts[1] == "description":
-                    return self.description
+                    return True if "value" not in annotation else annotation["value"]
                 elif parts[1] == "key":
-                    return self.key
-                elif parts[1] == "inputType":
-                    return self.inputType
+                    return annotation.key
 
         if "value" in annotation:
             value = annotation["value"]
             if isinstance(value, list):
-                for c in self.children:
-                    for child in value:
-                        if c.key == child["key"]:
-                            result = c.__querySelector(child, tokens)
-                            if result is not None:
-                                return result
-                            break
+                for child in value:
+                    result = Annotation.__querySelector(child, tokens)
+                    if result is not None:
+                        return result
             elif isinstance(value, dict):
-                for c in self.children:
-                    if c.key == value["key"]:
-                        return c.__querySelector(value, tokens)
+                return Annotation.__querySelector(value, tokens)
 
         return None
 
-    def querySelector(self, annotation, selector, value_first=False):
+    @staticmethod
+    def querySelector(annotation, selector, value_first=False):
         tokens = selector.split(" ")
         if value_first:
-            result = self.__querySelector(
+            result = Annotation.__querySelector(
                 {"key": None, "value": annotation}, tokens)
         else:
-            result = self.__querySelector(annotation, tokens)
+            result = Annotation.__querySelector(annotation, tokens)
         return None if result is None else result
 
     def __traverse(self, annotation, handler):
@@ -329,4 +322,9 @@ if __name__ == '__main__':
 
     va.queryMetadata("lp_text").set_bubble("1234")
     va.queryMetadata("lp_color").set_bubble()
-    print(va.compile())
+    annotation = va.compile()
+    print(json.dumps(annotation, indent=2))
+
+    print(va.querySelector(annotation, "car lp_text"))
+    print(Annotation.querySelector(annotation, "lp > lp_color"))
+

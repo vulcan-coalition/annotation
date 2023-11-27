@@ -1,4 +1,5 @@
 from .annotation import Annotation
+from . import utilities
 
 import pkg_resources
 import os

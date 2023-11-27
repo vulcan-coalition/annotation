@@ -16,7 +16,7 @@ shutil.copytree("js/src", "build/lib/vulcan_annotation/js")
 
 setup(
     name="vulcan-annotation",
-    version="3.0.1",
+    version="3.0.2",
     author="Chatavut Viriyasuthee",
     author_email="chatavut@lab.ai",
     description="Vulcan annotation for structured data.",
@@ -34,6 +34,7 @@ setup(
     ],
     python_requires='>=3.9',
     install_requires=[
-        "shortuuid"
+        "shortuuid",
+        "levenshtein"
     ]
 )

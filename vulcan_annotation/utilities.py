@@ -21,7 +21,7 @@ def divergence(from_dict, to_dict):
             return 1 + divergence(None, to_dict)
 
         if "value" not in to_dict:
-            return 2
+            return 0 if "value" not in from_dict else 1
         elif isinstance(to_dict["value"], str):
             return sdist(from_dict["value"], to_dict["value"])
         elif isinstance(to_dict["value"], dict):
@@ -96,3 +96,9 @@ if __name__ == '__main__':
 
     assert(divergence(from_dict, to_dict) == 4 + 4 + 4)
 
+
+    assert(divergence(from_dict, from_dict) == 0)
+    assert(divergence(to_dict, to_dict) == 0)
+
+    assert(divergence(None, None) == 0)
+    assert(divergence(from_dict, None) == 1)

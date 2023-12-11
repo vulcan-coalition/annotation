@@ -1,4 +1,3 @@
-
 class Annotation_dom {
     constructor(placeholder, logic, on_changed, required = false) {
         this.children = [];
@@ -9,7 +8,7 @@ class Annotation_dom {
         const key = logic.key;
 
         const key_node = document.createElement("div");
-        key_node.innerHTML = (this.logic.key || "") + " [" + (input_type || "") + "]" + " (" + (logic.description || "") + ")";
+        key_node.innerHTML = logic.description || this.logic.key;
         key_node.classList.add("key");
         placeholder.appendChild(key_node);
 
@@ -34,15 +33,15 @@ class Annotation_dom {
                     input.setAttribute("aria-label", logic.key);
                     this.value_node.appendChild(input);
 
-                    logic.set_on_data(function(data) {
-                        input.value = data;
-                        this.placeholder.classList.add("selecting");
-                    }.bind(this));
-                    input.addEventListener('keydown', (event) => {
-                        if(event.keyCode === 13) {                        
-                            logic.set(input.value);
-                            on_changed();
-                        }
+                    logic.set_on_data(
+                        function (data) {
+                            input.value = data;
+                            this.placeholder.classList.add("selecting");
+                        }.bind(this)
+                    );
+                    input.addEventListener("keydown", (event) => {
+                        logic.set(input.value);
+                        on_changed();
                     });
 
                     this.object = input;
@@ -50,12 +49,11 @@ class Annotation_dom {
                 break;
             case "mutual":
                 {
-
                     const select = document.createElement("select");
                     select.setAttribute("name", logic.key);
                     select.setAttribute("aria-label", logic.key);
-                    
-                    while(select.firstChild) select.firstChild.remove();
+
+                    while (select.firstChild) select.firstChild.remove();
                     let opt = document.createElement("option");
                     opt.value = ""; // the index
                     opt.innerHTML = "pick one";
@@ -69,30 +67,32 @@ class Annotation_dom {
 
                     this.value_node.appendChild(select);
 
-                    logic.set_on_select(function(is_selected) {
-                        let selected_child = null;
-                        for (const child of logic.children) {
-                            if (child.is_selected) {
-                                selected_child = child;
-                                break;
+                    logic.set_on_select(
+                        function (is_selected) {
+                            let selected_child = null;
+                            for (const child of logic.children) {
+                                if (child.is_selected) {
+                                    selected_child = child;
+                                    break;
+                                }
                             }
-                        }
-                        if (selected_child != null) {
-                            select.value = selected_child.key;
-                            this.clear(true);
-                            if (selected_child.inputType != null) {
-                                // populate ui
-                                const div = document.createElement("div");
-                                // change to after if you prefer a flat layout
-                                this.value_node.appendChild(div);
-                                this.children.push(new Annotation_dom(div, selected_child, on_changed, true));
+                            if (selected_child != null) {
+                                select.value = selected_child.key;
+                                this.clear(true);
+                                if (selected_child.inputType != null) {
+                                    // populate ui
+                                    const div = document.createElement("div");
+                                    // change to after if you prefer a flat layout
+                                    this.value_node.appendChild(div);
+                                    this.children.push(new Annotation_dom(div, selected_child, on_changed, true));
+                                }
                             }
-                        }
 
-                        if(is_selected) this.placeholder.classList.add("selecting");
-                        else this.placeholder.classList.remove("selecting");
-                    }.bind(this));
-                    select.addEventListener('change', (event) => {
+                            if (is_selected) this.placeholder.classList.add("selecting");
+                            else this.placeholder.classList.remove("selecting");
+                        }.bind(this)
+                    );
+                    select.addEventListener("change", (event) => {
                         logic.set(select.value);
                         on_changed();
                     });
@@ -100,40 +100,61 @@ class Annotation_dom {
                     this.object = select;
                 }
                 break;
-            case "property":
             case "multiple":
+            case "property":
+                logic.set_on_select(
+                    function (is_selected) {
+                        if (is_selected) {
+                            this.placeholder.classList.add("selecting");
+                        } else {
+                            this.clear(true);
+                            this.placeholder.classList.remove("selecting");
+                        }
+                    }.bind(this)
+                );
+
+                if (logic.children != null) {
+                    for (const c of logic.children) {
+                        const div = document.createElement("div");
+                        this.children.push(
+                            new Annotation_dom(
+                                div,
+                                c,
+                                function () {
+                                    logic.set();
+                                    on_changed();
+                                }.bind(this),
+                                c["required"] != null && c["required"]
+                            )
+                        );
+                        // change to after if you prefer a flat layout
+                        this.value_node.appendChild(div);
+                    }
+                }
+                break;
             default:
                 {
                     const check = document.createElement("input");
-                    check.type="checkbox";
+                    check.type = "checkbox";
                     check.setAttribute("name", logic.key);
                     check.setAttribute("aria-label", logic.key);
                     this.value_node.appendChild(check);
 
-                    logic.set_on_select(function(is_selected) {
-                        check.checked = is_selected;
-
-                        if(is_selected)
-                        {
-                            if(logic.children != null) {                            
-                                for (const c of logic.children) {
-                                    const div = document.createElement("div");
-                                    this.children.push(new Annotation_dom(div, c, on_changed, (c["required"] != null && c["required"])));   
-                                    // change to after if you prefer a flat layout
-                                    this.value_node.appendChild(div);
-                                }
+                    logic.set_on_select(
+                        function (is_selected) {
+                            check.checked = is_selected;
+                            if (is_selected) {
+                                this.placeholder.classList.add("selecting");
+                            } else {
+                                this.clear(true);
+                                this.placeholder.classList.remove("selecting");
                             }
-                            this.placeholder.classList.add("selecting");
-                        }else{
-                            this.clear(true);
-                            this.placeholder.classList.remove("selecting");
-                        }
-
-                    }.bind(this));
-                    check.addEventListener('change', (event) => {
-                        if(check.checked) {
+                        }.bind(this)
+                    );
+                    check.addEventListener("change", (event) => {
+                        if (check.checked) {
                             logic.set();
-                        }else{
+                        } else {
                             logic.unset();
                         }
                         on_changed();
@@ -143,7 +164,6 @@ class Annotation_dom {
                 }
                 break;
         }
-
     }
 
     clear(leave_this = false) {
@@ -187,5 +207,4 @@ class Annotation_dom {
             child.disable(flag);
         }
     }
-
 }

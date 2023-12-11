@@ -400,3 +400,5 @@ class Choice {
         return this.__queryMetadata(tokens);
     }
 }
+
+Annotation_logic = Choice;

@@ -43,8 +43,8 @@
                 let category_dom = document.querySelector("#category");
                 const initialize = async function (category_data) {
                     while (category_dom.firstChild) category_dom.firstChild.remove();
-                    const root_logic = new Choice(category_data, null);
-                    const _ = new Annotation_dom(category_dom, root_logic, () => {}, false, category_dom);
+                    const root_logic = new Annotation_logic(category_data, null);
+                    const _ = new Annotation_DOM(category_dom, root_logic, () => {}, false);
                     return root_logic;
                 };
 

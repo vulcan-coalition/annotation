@@ -1,5 +1,5 @@
 class Annotation_dom {
-    constructor(placeholder, logic, on_changed, required = false) {
+    constructor(placeholder, logic, on_changed, required = false, dom_parent = null) {
         this.children = [];
         this.logic = logic;
         this.on_changed = on_changed;
@@ -8,13 +8,20 @@ class Annotation_dom {
         const key = logic.key;
 
         const key_node = document.createElement("div");
-        key_node.innerHTML = logic.description || this.logic.key;
+        key_node.innerHTML = logic.description || this.logic.key || "";
         key_node.classList.add("key");
         placeholder.appendChild(key_node);
 
         this.value_node = document.createElement("div");
         this.value_node.classList.add("value");
         placeholder.appendChild(this.value_node);
+
+        this.children_node = document.createElement("div");
+        this.children_node.classList.add("children");
+
+        // assigne dom_parent to do the flat layout
+        if (dom_parent != null) dom_parent.appendChild(this.children_node);
+        else placeholder.appendChild(this.children_node);
 
         this.object = null;
         switch (input_type) {
@@ -82,9 +89,10 @@ class Annotation_dom {
                                 if (selected_child.inputType != null) {
                                     // populate ui
                                     const div = document.createElement("div");
-                                    // change to after if you prefer a flat layout
-                                    this.value_node.appendChild(div);
-                                    this.children.push(new Annotation_dom(div, selected_child, on_changed, true));
+                                    this.children_node.appendChild(div);
+                                    this.children.push(new Annotation_dom(div, selected_child, on_changed, true, dom_parent));
+
+                                    div.focus();
                                 }
                             }
 
@@ -100,38 +108,8 @@ class Annotation_dom {
                     this.object = select;
                 }
                 break;
-            case "multiple":
             case "property":
-                logic.set_on_select(
-                    function (is_selected) {
-                        if (is_selected) {
-                            this.placeholder.classList.add("selecting");
-                        } else {
-                            this.clear(true);
-                            this.placeholder.classList.remove("selecting");
-                        }
-                    }.bind(this)
-                );
-
-                if (logic.children != null) {
-                    for (const c of logic.children) {
-                        const div = document.createElement("div");
-                        this.children.push(
-                            new Annotation_dom(
-                                div,
-                                c,
-                                function () {
-                                    logic.set();
-                                    on_changed();
-                                }.bind(this),
-                                c["required"] != null && c["required"]
-                            )
-                        );
-                        // change to after if you prefer a flat layout
-                        this.value_node.appendChild(div);
-                    }
-                }
-                break;
+            case "multiple":
             default:
                 {
                     const check = document.createElement("input");
@@ -143,7 +121,16 @@ class Annotation_dom {
                     logic.set_on_select(
                         function (is_selected) {
                             check.checked = is_selected;
+
                             if (is_selected) {
+                                if (logic.children != null) {
+                                    for (const c of logic.children) {
+                                        const div = document.createElement("div");
+                                        this.children.push(new Annotation_dom(div, c, on_changed, c["required"] != null && c["required"], dom_parent));
+                                        // change to after if you prefer a flat layout
+                                        this.children_node.appendChild(div);
+                                    }
+                                }
                                 this.placeholder.classList.add("selecting");
                             } else {
                                 this.clear(true);
@@ -184,6 +171,7 @@ class Annotation_dom {
 
         for (const child of this.children) {
             child.clear();
+            child.children_node.remove();
             child.placeholder.remove();
         }
         this.children = [];

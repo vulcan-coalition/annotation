@@ -1,123 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Vulcan category demo</title>
+        <link rel="stylesheet" href="./style.css" />
+    </head>
 
-<head>
-    <meta charset="utf-8">
-    <title>Vulcan category demo</title>
-    <link rel="stylesheet" href="./style.css">
-</head>
-
-<body>
-    <div class="header">
-        <h1>Vulcan annotation tutorial</h1>
-    </div>
-    <div class="container">
-        <div class="content">
-            <p>Provide category text in the box and press enter to compile.</p>
-            <textarea id="category_text">
-            </textarea>
-            <p>
-                Press <i>compile</i> to compile the selection and get the annotation object.
-                Press <i>decompile</i> to re-select the dom from the annotation object.
-            </p>
-            <div class="control">
-                <input type="button" id="compile_button" value="Compile" />
-                <input type="button" id="decompile_button" value="Decompile" />
-            </div>
-            <textarea id="compile_error"></textarea>
-            <textarea id="compile_result">
-            </textarea>
-            <p> To check whether this annotation object is completed. Use <code>category_object.validate(<span class="param">annotation object</span>)</code>. </p>
-            <div class="control">
-                <input type="button" id="validate_button" value="Validate" />
-            </div>
-            <p> From the annotation object, use <code>category_object.querySelector(<span class="param">annotation object</span>, <span class="param">query string</span>)</code> to get a value down the tree. </p>
-            <p>Type a query string in the box.</p>
-            <input type="text" id="query_text">
-            <textarea id="query_result"></textarea>
+    <body>
+        <div class="header">
+            <h1>Vulcan annotation tutorial</h1>
         </div>
-        <div id="category">
+        <div class="container">
+            <div class="content">
+                <p>Provide category text in the box and press enter to compile.</p>
+                <textarea id="category_text"> </textarea>
+                <p>Press <i>compile</i> to compile the selection and get the annotation object. Press <i>decompile</i> to re-select the dom from the annotation object.</p>
+                <div class="control">
+                    <input type="button" id="compile_button" value="Compile" />
+                    <input type="button" id="decompile_button" value="Decompile" />
+                </div>
+                <textarea id="compile_error"></textarea>
+                <textarea id="compile_result"> </textarea>
+                <p>
+                    To check whether this annotation object is completed. Use <code>category_object.validate(<span class="param">annotation object</span>)</code>.
+                </p>
+                <div class="control">
+                    <input type="button" id="validate_button" value="Validate" />
+                </div>
+                <p>
+                    From the annotation object, use <code>category_object.querySelector(<span class="param">annotation object</span>, <span class="param">query string</span>)</code> to get a value down the tree.
+                </p>
+                <p>Type a query string in the box.</p>
+                <input type="text" id="query_text" />
+                <textarea id="query_result"></textarea>
+            </div>
+            <div id="category"></div>
         </div>
-    </div>
-    <script src="./src/vulcan_annotation.js" crossorigin></script>
-    <script src="./src/va_dom.js" crossorigin></script>
-    <script>
-    category = function() {
-        let category_dom = document.querySelector('#category');
-        const initialize = async function(category_data) {
-            while (category_dom.firstChild) category_dom.firstChild.remove();
-            const root_logic = new Choice(category_data, null);
-            const _ = new Annotation_dom(category_dom, root_logic, () => {});
-            return root_logic;
-        };
+        <script src="./src/vulcan_annotation.js" crossorigin></script>
+        <script src="./src/va_dom.js" crossorigin></script>
+        <script>
+            category = (function () {
+                let category_dom = document.querySelector("#category");
+                const initialize = async function (category_data) {
+                    while (category_dom.firstChild) category_dom.firstChild.remove();
+                    const root_logic = new Choice(category_data, null);
+                    const _ = new Annotation_dom(category_dom, root_logic, () => {}, false, category_dom);
+                    return root_logic;
+                };
 
-        return {
-            initialize: initialize
-        };
-    }();
+                return {
+                    initialize: initialize,
+                };
+            })();
 
-    window.onload = async function() {
+            window.onload = async function () {
+                document.querySelectorAll("textarea").forEach((ta) => {
+                    ta.addEventListener("input", function (e) {
+                        e.target.style.height = 0;
+                        e.target.style.height = e.target.scrollHeight + "px";
+                    });
+                });
 
-        document.querySelectorAll('textarea').forEach(ta => {
-            ta.addEventListener('input', function(e) {
-                e.target.style.height = 0;
-                e.target.style.height = (e.target.scrollHeight) + "px";
-            });
-        });
+                let category_node = null;
+                try {
+                    const r = await fetch("./category/car.json");
+                    const response = await r.json();
+                    category_node = await category.initialize(response);
+                    const category_text = document.querySelector("#category_text");
+                    category_text.value = JSON.stringify(response, null, 4);
+                    category_text.dispatchEvent(new Event("input"));
+                } catch (e) {}
 
-        let category_node = null;
-        try {
-            const r = await fetch('./category/car.json');
-            const response = await r.json();
-            category_node = await category.initialize(response);
-            const category_text = document.querySelector('#category_text');
-            category_text.value = JSON.stringify(response, null, 4);
-            category_text.dispatchEvent(new Event('input'));
-        }catch(e) {
+                category_text.addEventListener("keydown", async function (e) {
+                    if (e.keyCode === 13) {
+                        category_node = await category.initialize(JSON.parse(category_text.value));
+                    }
+                });
 
-        }
+                const compile_result = document.querySelector("#compile_result");
 
-        category_text.addEventListener('keydown', async function(e) {
-            if (e.keyCode === 13) {
-                category_node = await category.initialize(JSON.parse(category_text.value));
-            }
-        });
+                document.querySelector("#compile_button").addEventListener("click", function (e) {
+                    const compiled_object = category_node.compile();
+                    compile_result.value = JSON.stringify(compiled_object, null, 4);
+                    compile_result.dispatchEvent(new Event("input"));
+                    const errors = category_node.get_compile_errors(compiled_object);
+                    for (const err of errors) {
+                        err.node = err.node.description || err.node.key;
+                        err.error = Choice.interpret_error(err.error);
+                    }
+                    document.querySelector("#compile_error").value = JSON.stringify(errors, null, 4);
+                    document.querySelector("#compile_error").dispatchEvent(new Event("input"));
+                });
 
-        const compile_result = document.querySelector('#compile_result');
+                document.querySelector("#validate_button").addEventListener("click", function (e) {
+                    if (category_node.validate(JSON.parse(compile_result.value))) {
+                        alert("Valid!");
+                    } else {
+                        alert("Invalid!");
+                    }
+                });
 
-        document.querySelector('#compile_button').addEventListener('click', function(e) {
-            const compiled_object = category_node.compile();
-            compile_result.value = JSON.stringify(compiled_object, null, 4);
-            compile_result.dispatchEvent(new Event('input'));
-            const errors = category_node.get_compile_errors(compiled_object);
-            for (const err of errors) {
-                err.node = err.node.description || err.node.key;
-                err.error = Choice.interpret_error(err.error);
-            }
-            document.querySelector('#compile_error').value = JSON.stringify(errors, null, 4);
-            document.querySelector('#compile_error').dispatchEvent(new Event('input'));
-        });
+                document.querySelector("#decompile_button").addEventListener("click", function (e) {
+                    category_node.decompile(JSON.parse(compile_result.value));
+                });
 
-        document.querySelector('#validate_button').addEventListener('click', function(e) {
-            if (category_node.validate(JSON.parse(compile_result.value))) {
-                alert("Valid!");
-            } else {
-                alert("Invalid!");
-            }
-        });
-
-        document.querySelector('#decompile_button').addEventListener('click', function(e) {
-            category_node.decompile(JSON.parse(compile_result.value));
-        });
-
-        document.querySelector('#query_text').addEventListener('keydown', function(e) {
-            if (e.keyCode === 13) {
-                document.querySelector('#query_result').value = JSON.stringify(category_node.querySelector(JSON.parse(compile_result.value), e.target.value), null, 4);
-                document.querySelector('#query_result').dispatchEvent(new Event('input'));
-            }
-        });
-    };
-    </script>
-</body>
-
+                document.querySelector("#query_text").addEventListener("keydown", function (e) {
+                    if (e.keyCode === 13) {
+                        document.querySelector("#query_result").value = JSON.stringify(category_node.querySelector(JSON.parse(compile_result.value), e.target.value), null, 4);
+                        document.querySelector("#query_result").dispatchEvent(new Event("input"));
+                    }
+                });
+            };
+        </script>
+    </body>
 </html>

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap");
 
 html,
 body {
@@ -11,7 +11,7 @@ body {
 }
 
 body {
-    font-family: 'Roboto Slab', serif;
+    font-family: "Roboto Slab", serif;
     color: white;
     display: flex;
     flex-flow: column nowrap;
@@ -40,7 +40,7 @@ body {
     gap: 10px;
 }
 
-.container>* {
+.container > * {
     flex: 0 1 400px;
 }
 
@@ -52,7 +52,7 @@ body {
     gap: 10px;
 }
 
-.content>* {
+.content > * {
     width: 600px;
 }
 
@@ -62,7 +62,7 @@ body {
     left: 0;
 }
 
-.value {
+.children {
     padding-left: 20px;
     border-left: solid 1px #ffff;
 }
@@ -76,7 +76,7 @@ body {
     gap: 10px;
 }
 
-.selecting>.key {
+.selecting > .key {
     font-weight: bold;
     color: #ff5f;
 }
@@ -88,7 +88,8 @@ input {
     border-radius: 10px;
 }
 
-input[type=button], input[type=text] {
+input[type="button"],
+input[type="text"] {
     height: 30px;
 }
 
@@ -108,5 +109,5 @@ textarea:blank {
 }
 
 .param {
-  color: #ff5f;
+    color: #ff5f;
 }

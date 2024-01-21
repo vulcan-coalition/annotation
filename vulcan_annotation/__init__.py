@@ -4,6 +4,8 @@ from . import utilities
 import pkg_resources
 import os
 
+__version__ = pkg_resources.get_distribution('foobar').version
+
 def load_js():
     resource_package = __name__
     resource_path = os.path.join('js', 'vulcan_annotation.js')

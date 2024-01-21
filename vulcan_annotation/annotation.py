@@ -1,6 +1,5 @@
 """
-version: 3.0
-changed: querySelector as a static function
+changed: added __version__
 """
 
 

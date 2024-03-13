@@ -1,5 +1,5 @@
 /**
-changed: added __version__
+changed: added max_size
 **/
 
 class Choice {
@@ -23,11 +23,22 @@ class Choice {
         // create children
         if (this.inputType != null && this.inputType !== "text") {
             this.children = [];
+            let sum_child_size = 0;
+            let max_child_size = 0;
             for (const choice of category.choices) {
                 const child = new Choice(choice, this);
                 this.children.push(child);
                 child.parent = this;
+                sum_child_size += child.max_size;
+                if (child.max_size > max_child_size) max_child_size = child.max_size;
             }
+            if (this.inputType === "mutual") {
+                this.max_size = 1 + max_child_size;
+            } else {
+                this.max_size = 1 + sum_child_size;
+            }
+        } else {
+            this.max_size = 1;
         }
     }
 

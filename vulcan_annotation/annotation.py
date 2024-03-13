@@ -1,5 +1,5 @@
 """
-changed: added __version__
+changed: added max_size
 """
 
 
@@ -25,12 +25,23 @@ class Annotation:
 
         if self.inputType and self.inputType != "text":
             self.children = []
+            sum_child_size = 0
+            max_child_size = 0
             for choice in category['choices']:
                 child = Annotation(choice, self)
                 self.children.append(child)
                 child.parent = self
+                sum_child_size += child.max_size
+                if child.max_size > max_child_size:
+                    max_child_size = child.max_size
+            if self.inputType == "mutual":
+                self.max_size = 1 + max_child_size
+            else: # multiple or property
+                self.max_size = 1 + sum_child_size
         else:
             self.children = None
+            self.max_size = 1
+
 
     def set_on_data(self, on_data):
         self.on_data = on_data
@@ -315,6 +326,8 @@ if __name__ == '__main__':
             }]
         }]
     })
+
+    print("Category max_size", va.max_size)
 
     print(va.queryMetadata("car a.description"))
     print(va.queryMetadata("a > a.description"))

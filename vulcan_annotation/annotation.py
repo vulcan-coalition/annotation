@@ -88,6 +88,12 @@ class Annotation:
         self.is_selected = True
         if self.inputType == "text":
             self.data = data
+        elif self.inputType == "mutual":
+            for child in self.children:
+                if data is None or child.key != data:
+                    child.unset()
+                else:
+                    child.set()
         if self.parent is not None:
             self.parent.set_bubble()
 

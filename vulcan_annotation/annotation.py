@@ -88,9 +88,9 @@ class Annotation:
         self.is_selected = True
         if self.inputType == "text":
             self.data = data
-        elif self.inputType == "mutual":
+        elif self.inputType == "mutual" and data is not None:
             for child in self.children:
-                if data is None or child.key != data:
+                if child.key != data:
                     child.unset()
                 else:
                     child.set()

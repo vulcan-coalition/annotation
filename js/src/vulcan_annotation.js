@@ -111,6 +111,14 @@ class Choice {
         this.is_selected = true;
         if (this.inputType == "text") {
             this.data = data;
+        } else if (this.inputType == "mutual" && data != null) {
+            for (const child of this.children) {
+                if (child.key !== data) {
+                    child.unset();
+                } else {
+                    child.set();
+                }
+            }
         }
         if (this.parent != null) {
             this.parent.set_bubble();

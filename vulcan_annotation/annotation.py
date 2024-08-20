@@ -151,6 +151,113 @@ class Annotation:
         self.__fireevents()
 
 
+    def __validate(self, annotation):
+        if annotation.get('key') != self.key:
+            return False
+
+        if self.inputType == "text":
+            if isinstance(annotation.get('value'), str):
+                return True
+        elif self.inputType == "property":
+            if not isinstance(annotation.get('value'), list):
+                return False
+            if len(annotation.get('value')) != len(self.children):
+                return False
+
+            for c in self.children:
+                matched = None
+                for item in annotation.get('value'):
+                    if item.get('key') == c.key:
+                        matched = item
+                if matched is None or not c.__validate(matched):
+                    return False
+        elif self.inputType == "multiple":
+            if not isinstance(annotation.get('value'), list):
+                return False
+            for c in self.children:
+                if c.required:
+                    matched = None
+                    for item in annotation.get('value'):
+                        if item.get('key') == c.key:
+                            matched = item
+                    if matched is None or not c.__validate(matched):
+                        return False
+            for item in annotation.get('value'):
+                matched = None
+                for c in self.children:
+                    if item.get('key') == c.key:
+                        matched = c
+                if matched is None or not matched.__validate(item):
+                    return False
+        elif self.inputType == "mutual":
+            if annotation.get('value') is None or annotation.get('value').get('key') is None:
+                return False
+            for child in self.children:
+                if annotation.get('value').get('key') == child.key:
+                    return child.__validate(annotation.get('value'))
+        elif self.inputType is None:
+            pass
+
+        return True
+
+
+    def validate(self, annotation, value_first=False):
+        # validate the answer against the category
+        if value_first:
+            return self.__validate({ 'key': None, 'value': annotation })
+        return self.__validate(annotation)
+
+
+    def get_compile_errors(self):
+        # return a list of errors
+        errors = []
+        if not self.is_selected:
+            errors.append({
+                'node': self,
+                'error': -2 if self.inputType == "text" else -1
+            })
+        else:
+            if self.inputType == "property":
+                for c in self.children:
+                    errors += c.get_compile_errors()
+            elif self.inputType == "multiple":
+                for c in self.children:
+                    if c.required or c.is_selected:
+                        errors += c.get_compile_errors()
+            elif self.inputType == "mutual":
+                match_count = 0
+                for c in self.children:
+                    if c.is_selected:
+                        errors += c.get_compile_errors()
+                        match_count += 1
+                if match_count == 0 or match_count > 1:
+                    errors.append({
+                        'node': self,
+                        'error': -3
+                    })
+            elif self.inputType == "text":
+                if not isinstance(self.data, str):
+                    errors.append({
+                        'node': self,
+                        'error': -2
+                    })
+            elif self.inputType is None:
+                pass
+        return errors
+    
+
+    @staticmethod
+    def interpret_error(error):
+        if error == -1:
+            return "The required field is not selected."
+        elif error == -2:
+            return "Value of the text field is not filled."
+        elif error == -3:
+            return "The mutual field is not selected or over selected."
+        else:
+            return "Unknown error"
+
+
     @staticmethod
     def __querySelector(annotation, tokens):
         parts = tokens[0].split(".")
@@ -180,6 +287,7 @@ class Annotation:
 
         return None
 
+
     @staticmethod
     def querySelector(annotation, selector, value_first=False):
         tokens = selector.split(" ")
@@ -189,6 +297,7 @@ class Annotation:
         else:
             result = Annotation.__querySelector(annotation, tokens)
         return None if result is None else result
+
 
     def __traverse(self, annotation, handler):
         handler(self, annotation)
@@ -237,6 +346,12 @@ class Annotation:
                     return self.key
                 elif parts[1] == "inputType":
                     return self.inputType
+                elif parts[1] == "metadata":
+                    return self.metadata
+                elif parts[1] == "required":
+                    return self.required
+                elif parts[1] == "choices":
+                    return self.children
 
         if isinstance(self.children, list):
             for c in self.children:
@@ -339,4 +454,52 @@ if __name__ == '__main__':
 
     print(va.querySelector(annotation, "car lp_text"))
     print(Annotation.querySelector(annotation, "lp > lp_color"))
+
+    va.decompile([
+            {
+                "key": "lp",
+                "value": [
+                {
+                    "key": "lp_color"
+                }
+                ]
+            }
+        ], 
+        value_first=True)
+
+    errors = va.get_compile_errors()
+    for error in errors:
+        print(Annotation.interpret_error(error['error']), error['node'].key)
+
+    print(va.validate([
+            {
+                "key": "lp",
+                "value": [
+                    {
+                        "key": "lp_color"
+                    }
+                ]
+            }
+        ], 
+        value_first=True)
+    )
+
+    print(va.validate([
+            {
+                "key": "lp",
+                "value": [
+                    {
+                        "key": "lp_color"
+                    },
+                    {
+                        "key": "lp_type",
+                        "value": {
+                            "key": "lpr"
+                        }
+                    }
+                ]
+            }
+        ], 
+        value_first=True)
+    )
 
